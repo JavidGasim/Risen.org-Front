@@ -160,12 +160,12 @@ const Register = () => {
                 </div>
               )}
             </div>
-            
+
             {showUniDropdown && universities.length > 0 && (
               <div style={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid #334155', borderRadius: '8px', maxHeight: '180px', overflowY: 'auto', marginBottom: '8px' }}>
                 {universities.map((uni, idx) => (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #1E293B', transition: 'background 0.2s', textAlign: 'left' }}
                     onClick={() => {
                       setFormData({ ...formData, universityName: uni.name });
@@ -192,8 +192,8 @@ const Register = () => {
                   <span style={{ fontSize: '0.8rem', color: '#10B981', display: 'block', marginBottom: '2px', fontWeight: 600 }}>Selected University</span>
                   <span style={{ color: '#F8FAFC', fontWeight: 500 }}>{formData.universityName}</span>
                 </div>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setFormData({ ...formData, universityName: '' })}
                   style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#EF4444', cursor: 'pointer', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, transition: 'all 0.2s' }}
                   title="Clear selection"
@@ -204,9 +204,9 @@ const Register = () => {
                 </button>
               </div>
             ) : (
-                <div style={{ marginTop: '12px', padding: '12px 16px', background: 'rgba(30, 41, 59, 0.5)', border: '1px dashed #334155', borderRadius: '8px', textAlign: 'center', color: '#94A3B8', fontSize: '0.9rem' }}>
-                  Please search and select your university from the list.
-                </div>
+              <div style={{ marginTop: '12px', padding: '12px 16px', background: 'rgba(30, 41, 59, 0.5)', border: '1px dashed #334155', borderRadius: '8px', textAlign: 'center', color: '#94A3B8', fontSize: '0.9rem' }}>
+                Please search and select your university from the list.
+              </div>
             )}
           </div>
 

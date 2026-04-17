@@ -31,7 +31,7 @@ const Home = () => {
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <Activity size={32} color="#6366F1" />
-          <h3 style={{ fontSize: '1.5rem' }}>Daily Actions > Big Wins</h3>
+          <h3 style={{ fontSize: '1.5rem' }}>Daily Actions &gt; Big Wins</h3>
           <p style={{ color: '#94A3B8' }}>Build a streak by cracking engineering problems daily. Long-term performance tracking over one-off exams.</p>
         </div>
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
