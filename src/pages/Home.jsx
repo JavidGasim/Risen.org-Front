@@ -4,7 +4,7 @@ import { ArrowRight, Activity, Globe, Shield } from 'lucide-react';
 const Home = () => {
   return (
     <div style={{ padding: '40px 0', display: 'flex', flexDirection: 'column', gap: '80px' }}>
-      
+
       {/* Hero Section */}
       <section style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div style={{ display: 'inline-block', padding: '6px 16px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', borderRadius: '50px', fontSize: '0.9rem', fontWeight: 600, margin: '0 auto', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
@@ -45,7 +45,7 @@ const Home = () => {
           <p style={{ color: '#94A3B8' }}>A verifiable talent signal that transcends borders and grading curves. Fair, transparent, and purely effort-based.</p>
         </div>
       </section>
-      
+
       {/* Sample Subjects */}
       <section style={{ background: 'rgba(99, 102, 241, 0.03)', padding: '60px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.02)' }}>
         <h2 style={{ textAlign: 'center', fontSize: '2.5rem', marginBottom: '40px' }}>Master the core disciplines</h2>

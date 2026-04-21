@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -7,19 +7,24 @@ import Dashboard from './pages/Dashboard';
 import Subjects from './pages/Subjects';
 import Quest from './pages/Quest';
 import Leaderboards from './pages/Leaderboards';
+import AdminLayout from './components/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
 import { useAuth } from './context/AuthContext';
 
 function App() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   return (
     <>
-      <Navbar />
-      <main className="container" style={{ padding: '40px 24px', flex: 1 }}>
+      {!isAdminRoute && <Navbar />}
+      <main className={!isAdminRoute ? "container" : ""} style={!isAdminRoute ? { padding: '40px 24px', flex: 1 } : { }}>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to={isAdmin ? "/admin/dashboard" : "/dashboard"} />} />
           <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
 
           {/* Protected Routes */}
@@ -28,6 +33,15 @@ function App() {
           <Route path="/quest/:id" element={isAuthenticated ? <Quest /> : <Navigate to="/login" />} />
           <Route path="/leaderboards" element={isAuthenticated ? <Leaderboards /> : <Navigate to="/login" />} />
           
+          {/* Admin Routes */}
+          <Route path="/admin" element={isAuthenticated && isAdmin ? <AdminLayout /> : <Navigate to="/" />}>
+            <Route index element={<Navigate to="dashboard" />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="quests" element={<div style={{color:'white', padding: '40px'}}>Quests Management Coming Soon</div>} />
+            <Route path="settings" element={<div style={{color:'white', padding: '40px'}}>Settings Coming Soon</div>} />
+          </Route>
+
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

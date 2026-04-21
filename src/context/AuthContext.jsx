@@ -7,7 +7,23 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const checkAdminRole = (token) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      const parsed = JSON.parse(jsonPayload);
+      const role = parsed['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || parsed.role;
+      return role === 'Admin' || (Array.isArray(role) && role.includes('Admin'));
+    } catch (e) {
+      return false;
+    }
+  };
 
   useEffect(() => {
     const initAuth = async () => {
@@ -19,6 +35,7 @@ export const AuthProvider = ({ children }) => {
           setUser(data.user);
           setStats(data.stats);
           setIsAuthenticated(true);
+          setIsAdmin(checkAdminRole(token));
         } catch (error) {
           console.error("Auth check failed:", error);
           logout();
@@ -35,6 +52,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('risen_token', data.token);
     setUser(data.user);
     setIsAuthenticated(true);
+    setIsAdmin(checkAdminRole(data.token));
     
     // Fetch stats right after login
     try {
@@ -58,6 +76,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('risen_token', data.token);
     setUser(data.user);
     setIsAuthenticated(true);
+    setIsAdmin(checkAdminRole(data.token));
     
     try {
       const statsRes = await api.get('/Auth/me');
@@ -73,6 +92,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setStats(null);
     setIsAuthenticated(false);
+    setIsAdmin(false);
   };
 
   const refreshStats = async () => {
@@ -85,7 +105,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, stats, isAuthenticated, login, register, logout, refreshStats, loading }}>
+    <AuthContext.Provider value={{ user, stats, isAuthenticated, isAdmin, login, register, logout, refreshStats, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );
