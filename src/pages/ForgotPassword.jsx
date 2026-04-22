@@ -3,24 +3,43 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ShieldAlert } from 'lucide-react';
 
-const Login = () => {
+const ForgotPassword = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { forgotPassword } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setMessage('');
     setLoading(true);
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      const response = await forgotPassword(email);
+      
+      // If backend returned a raw token (for development testing), display a handy link.
+      const returnedToken = typeof response === 'string' ? response : (response?.token || response?.Token);
+      
+      if (returnedToken) {
+        const resetUrl = `${window.location.origin}/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(returnedToken)}`;
+        setMessage(
+          <div>
+            <p>Development Only - Token generated!</p>
+            <a href={resetUrl} style={{ color: '#10B981', textDecoration: 'underline', wordBreak: 'break-all' }}>
+              Click here to test your Reset Password link
+            </a>
+          </div>
+        );
+      } else {
+        setMessage('If an account exists with that email, a password reset link has been sent.');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Login failed');
+      const data = err.response?.data;
+      const errorMsg = data?.message || data?.detail || data?.title || err.message || 'Failed to process request';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -31,13 +50,19 @@ const Login = () => {
       <div className="glass-panel" style={{ width: '100%', maxWidth: '400px' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <ShieldAlert size={48} color="#6366F1" style={{ margin: '0 auto 16px' }} />
-          <h2>Welcome Back</h2>
-          <p style={{ color: '#94A3B8' }}>Log in to continue your streak.</p>
+          <h2>Forgot Password</h2>
+          <p style={{ color: '#94A3B8' }}>Enter your email to reset your password.</p>
         </div>
 
         {error && (
           <div style={{ background: 'rgba(2ef, 68, 68, 0.1)', border: '1px solid #EF4444', color: '#FCA5A5', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
             {error}
+          </div>
+        )}
+
+        {message && (
+          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10B981', color: '#6EE7B7', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
+            {message}
           </div>
         )}
 
@@ -53,23 +78,6 @@ const Login = () => {
               placeholder="engineer@risen.org"
             />
           </div>
-          
-          <div className="form-group">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="form-label">Password</label>
-              <Link to="/forgot-password" style={{ color: '#6366F1', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 500 }}>
-                Forgot Password?
-              </Link>
-            </div>
-            <input 
-              type="password" 
-              className="form-control" 
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
 
           <button 
             type="submit" 
@@ -77,16 +85,16 @@ const Login = () => {
             style={{ width: '100%', marginTop: '12px' }}
             disabled={loading}
           >
-            {loading ? 'Authenticating...' : 'Log In'}
+            {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
 
         <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.9rem', color: '#94A3B8' }}>
-          Don't have an account? <Link to="/register" style={{ color: '#6366F1', fontWeight: 600 }}>Join the league</Link>
+          Remember your password? <Link to="/login" style={{ color: '#6366F1', fontWeight: 600 }}>Log In</Link>
         </div>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default ForgotPassword;
