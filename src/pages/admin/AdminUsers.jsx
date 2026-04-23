@@ -27,11 +27,9 @@ export default function AdminUsers() {
   const handleToggleAdmin = async (userId, currentIsAdmin) => {
     try {
       if (currentIsAdmin) {
-        // We lack a precise "roles" info in the GET list from backend currently.
-        // If we assumed they are admin, we remove it.
         await api.delete(`/admin/users/${userId}/roles/Admin`);
       } else {
-        await api.post(`/admin/users/${userId}/roles`, "Admin", {
+        await api.post(`/admin/users/${userId}/roles`, JSON.stringify("Admin"), {
           headers: { 'Content-Type': 'application/json' }
         });
       }

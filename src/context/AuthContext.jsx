@@ -61,9 +61,11 @@ export const AuthProvider = ({ children }) => {
     const { data } = await api.post('/Auth/login', { Email: email, Password: password });
     
     const returnedToken = data.token || data.accessToken || data.access;
+    let adminStatus = false;
     if (returnedToken) {
+      adminStatus = checkAdminRole(returnedToken);
       setCookie('risen_token', returnedToken);
-      setIsAdmin(checkAdminRole(returnedToken));
+      setIsAdmin(adminStatus);
     }
 
     if (data.user) setUser(data.user);
@@ -77,7 +79,7 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.error(e);
     }
-    return data;
+    return { ...data, _isAdmin: adminStatus };
   };
 
   const register = async (email, password, firstName, lastName, universityName) => {
@@ -154,7 +156,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, stats, isAuthenticated, isAdmin, login, register, logout, forgotPassword, resetPassword, refreshStats, loading }}>
+    <AuthContext.Provider value={{ user, stats, isAuthenticated, isAdmin, login, register, logout, forgotPassword, resetPassword, refreshStats, loading, checkAdminRole }}>
       {!loading && children}
     </AuthContext.Provider>
   );

@@ -17,8 +17,8 @@ export default function AdminDashboard() {
         // We'll use mock numbers if exact endpoints for totals are missing, 
         // but try to fetch recent actions.
         const [usersRes, actionsRes] = await Promise.all([
-          api.get('/admin/users?limit=1'), // Just to see it works
-          api.get('/admin/actions?limit=5')
+          api.get('/admin/users?limit=1'), 
+          api.get('/Admin/actions?limit=15')
         ]);
         
         setStats({

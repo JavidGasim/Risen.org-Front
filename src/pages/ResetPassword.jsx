@@ -10,7 +10,7 @@ const ResetPassword = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { resetPassword } = useAuth();
+  const { resetPassword, checkAdminRole } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
@@ -35,9 +35,17 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
-      await resetPassword(email, token, password);
+      const res = await resetPassword(email, token, password);
       setMessage('Password successfully reset! Logging you in...');
-      setTimeout(() => navigate('/dashboard'), 1500);
+      
+      const returnedToken = res.token || res.accessToken || res.access;
+      setTimeout(() => {
+        if (checkAdminRole(returnedToken)) {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      }, 1500);
     } catch (err) {
       const data = err.response?.data;
       const errorMsg = data?.message || data?.detail || data?.title || err.message || 'Failed to reset password';

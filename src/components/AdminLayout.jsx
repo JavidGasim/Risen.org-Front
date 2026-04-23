@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Map, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Library, BookOpen, Map, Settings, LogOut, CreditCard, Trophy } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function AdminLayout() {
@@ -9,7 +9,11 @@ export default function AdminLayout() {
   const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Universities', href: '/admin/universities', icon: Library },
+    { name: 'Subjects', href: '/admin/subjects', icon: BookOpen },
     { name: 'Quests', href: '/admin/quests', icon: Map },
+    { name: 'League Tiers', href: '/admin/leagues', icon: Trophy },
+    { name: 'Plans', href: '/admin/plans', icon: CreditCard },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
 

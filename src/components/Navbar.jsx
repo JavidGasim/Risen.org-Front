@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShieldAlert, Zap, Compass, Trophy, User } from 'lucide-react';
+import { ShieldAlert, Zap, Compass, Trophy, User, Sparkles } from 'lucide-react';
 
 const Navbar = () => {
   const { isAuthenticated, logout, user } = useAuth();
@@ -43,6 +43,9 @@ const Navbar = () => {
             <Link to="/leaderboards" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#E2E8F0' }}>
               <Trophy size={18} /> Leaderboards
             </Link>
+            <Link to="/pricing" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#F59E0B', fontWeight: 600 }}>
+              <Sparkles size={18} /> Upgrade
+            </Link>
           </div>
         )}
       </div>
@@ -50,6 +53,7 @@ const Navbar = () => {
       <div>
         {!isAuthenticated ? (
           <div style={{ display: 'flex', gap: '16px' }}>
+            <Link to="/pricing" className="btn btn-outline" style={{ padding: '8px 16px', borderColor: 'rgba(245,158,11,0.3)', color: '#F59E0B' }}>Pricing</Link>
             <Link to="/login" className="btn btn-outline" style={{ padding: '8px 16px' }}>Login</Link>
             <Link to="/register" className="btn btn-primary" style={{ padding: '8px 16px' }}>Join the League</Link>
           </div>
