@@ -1,166 +1,231 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { useAuth } from '../context/AuthContext';
-import { Target, Zap, ChevronLeft, CheckCircle, AlertTriangle, Disc } from 'lucide-react';
+import { 
+  Target, CheckCircle, AlertTriangle, Disc, Lock, 
+  ChevronRight, Filter, BookOpen, Layers
+} from 'lucide-react';
+
+const diffMap = {
+  1: { label: 'Easy',   color: '#10B981', bg: 'rgba(16,185,129,0.12)' },
+  2: { label: 'Medium', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+  3: { label: 'Hard',   color: '#EF4444', bg: 'rgba(239,68,68,0.12)'  },
+  4: { label: 'Expert', color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+};
 
 const Quest = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const { refreshStats } = useAuth();
-  
-  const [quest, setQuest] = useState(null);
+  const [quests, setQuests] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [solution, setSolution] = useState('');
-  const [successData, setSuccessData] = useState(null);
   const [error, setError] = useState('');
+  const [selectedSubjectId, setSelectedSubjectId] = useState('all');
 
   useEffect(() => {
-    const fetchQuest = async () => {
+    const fetchData = async () => {
       try {
-        setError('');
-        const { data } = await api.get(`/Quests/${id}`);
-        setQuest(data.quest || data.item || data);
+        const [qRes, sRes] = await Promise.all([
+          api.get('/QuestsFeed/all', { params: { limit: 100 } }),
+          api.get('/Subjects')
+        ]);
+        
+        const qList = Array.isArray(qRes.data) ? qRes.data : (qRes.data.items || []);
+        const sList = sRes.data?.subjects || sRes.data?.items || sRes.data || [];
+        
+        setQuests(qList);
+        setSubjects(sList);
       } catch (err) {
-        console.error(err);
-        setError("Could not load quest data. The server might be unreachable.");
+        setError('Could not load data.');
       } finally {
         setLoading(false);
       }
     };
-    fetchQuest();
-  }, [id]);
+    fetchData();
+  }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError('');
-    try {
-      const { data } = await api.post(`/Quests/${id}/complete`, { answer: solution });
-      setSuccessData(data);
-      refreshStats(); // Update context stats (league, xp, streak)
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || err.response?.data?.errors?.join(', ') || 'Verification failed. Incorrect answer or system error.');
-    } finally {
-      setSubmitting(false);
-    }
+  const getSubjectName = (subjectId) => {
+    const s = subjects.find(sub => sub.id === subjectId);
+    return s ? s.name : 'General';
   };
+
+  const filteredQuests = selectedSubjectId === 'all' 
+    ? quests 
+    : quests.filter(q => (q.subject_id || q.subjectId) === selectedSubjectId);
 
   if (loading) return (
     <div className="flex-center fade-in" style={{ minHeight: '60vh', flexDirection: 'column', gap: '20px' }}>
+      <style>{`@keyframes spin{100%{transform:rotate(360deg)}}`}</style>
       <Disc size={48} color="#10B981" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
-      <style>{`
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-      `}</style>
-      <div style={{ color: '#94A3B8', fontSize: '1.2rem', letterSpacing: '1px' }}>DECRYPTING MODULES...</div>
-    </div>
-  );
-  
-  if (!quest && !loading) return (
-    <div className="flex-center fade-in" style={{ minHeight: '50vh', flexDirection: 'column', gap: '16px' }}>
-      <AlertTriangle size={48} color="#EF4444" />
-      <div style={{ fontSize: '1.2rem' }}>{error || 'Quest not found.'}</div>
-      <Link to="/subjects" className="btn btn-outline" style={{ marginTop: '16px' }}>Return to Subjects</Link>
+      <div style={{ color: '#94A3B8', letterSpacing: '1px' }}>SYNCHRONIZING ARCHIVE...</div>
     </div>
   );
 
-  if (successData) {
-    return (
-      <div className="flex-center fade-in" style={{ minHeight: '70vh' }}>
-        <div className="premium-card glow-border" style={{ textAlign: 'center', maxWidth: '550px', width: '100%', padding: '48px 32px' }}>
-          <CheckCircle size={80} color="#10B981" className="slide-up" style={{ margin: '0 auto 24px', filter: 'drop-shadow(0 0 20px rgba(16,185,129,0.5))' }} />
-          <h2 className="slide-up delay-100" style={{ color: '#F8FAFC', marginBottom: '8px', fontSize: '2.5rem' }}>Quest Completed!</h2>
-          <p className="slide-up delay-100" style={{ color: '#10B981', marginBottom: '32px', fontSize: '1.1rem', fontWeight: 500 }}>Target neutralized effectively.</p>
-          
-          <div className="slide-up delay-200" style={{ background: 'rgba(0,0,0,0.4)', padding: '32px', borderRadius: '16px', border: '1px solid rgba(16,185,129,0.2)', marginBottom: '32px' }}>
-            <div style={{ fontSize: '3.5rem', fontWeight: 800, color: '#F59E0B', marginBottom: '16px', textShadow: '0 0 20px rgba(245,158,11,0.4)' }}>
-              +{successData.earned_xp || quest.base_xp || 0} XP
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-around', color: '#E2E8F0', marginTop: '16px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '20px' }}>
-              <div>
-                <div style={{ fontSize: '0.85rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '1px' }}>Streak</div>
-                <div style={{ fontWeight: 800, fontSize: '1.2rem' }}>{successData.new_stats?.streak_days || 1} Days</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.85rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '1px' }}>League</div>
-                <div style={{ fontWeight: 800, color: '#6366F1', fontSize: '1.2rem' }}>{successData.new_stats?.current_league || 'Rookie'}</div>
-              </div>
-            </div>
-          </div>
-          
-          <Link to="/dashboard" className="btn btn-primary slide-up delay-300" style={{ width: '100%', padding: '16px' }}>
-            Return to Command Center
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  if (error) return (
+    <div className="flex-center" style={{ minHeight: '50vh', flexDirection: 'column', gap: '16px' }}>
+      <AlertTriangle size={48} color="#EF4444" />
+      <div style={{ color: '#FCA5A5' }}>{error}</div>
+    </div>
+  );
+
+  const completed = quests.filter(q => q.isCompletedToday || q.isCompleted || q.alreadyCompletedEver || q.isSolved || q.is_solved).length;
 
   return (
-    <div style={{ maxWidth: '850px', margin: '0 auto' }} className="fade-in">
-      <Link to="/subjects" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#94A3B8', marginBottom: '32px', fontWeight: 500, transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color='#fff'} onMouseLeave={(e) => e.currentTarget.style.color='#94A3B8'}>
-        <ChevronLeft size={18} /> Back Archive
-      </Link>
-      
-      <div className="premium-card slide-up" style={{ padding: '48px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
-          <div>
-            <div style={{ color: '#6366F1', fontWeight: 700, fontSize: '0.95rem', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '1px' }}>
-              {quest.subject_name || 'General Engineering'}
-            </div>
-            <h1 style={{ margin: 0, fontSize: '3rem', lineHeight: 1.1, textShadow: '0 0 30px rgba(255,255,255,0.1)' }}>{quest.title}</h1>
+    <div style={{ maxWidth: '1000px', margin: '0 auto' }} className="fade-in">
+      <style>{`
+        @keyframes spin{100%{transform:rotate(360deg)}}
+        .qrow{transition:all .2s cubic-bezier(0.4, 0, 0.2, 1);cursor:pointer;position:relative;}
+        .qrow:hover{background:rgba(99,102,241,0.07)!important;border-color:rgba(99,102,241,0.3)!important;transform:translateX(6px);}
+        .filter-btn {
+          padding: 10px 20px;
+          border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.05);
+          background: rgba(15,23,42,0.4);
+          color: #94A3B8;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          white-space: nowrap;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .filter-btn:hover {
+          background: rgba(255,255,255,0.05);
+          color: #E2E8F0;
+        }
+        .filter-btn.active {
+          background: #6366F1;
+          color: #fff;
+          border-color: #6366F1;
+          box-shadow: 0 0 20px rgba(99,102,241,0.3);
+        }
+        .subject-badge {
+          font-size: 0.65rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          color: #6366F1;
+          background: rgba(99,102,241,0.1);
+          padding: 3px 10px;
+          border-radius: 6px;
+          margin-bottom: 6px;
+          display: inline-block;
+          border: 1px solid rgba(99,102,241,0.1);
+        }
+      `}</style>
+
+      {/* Header & Stats */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'40px' }}>
+        <div>
+          <div style={{ display:'flex', alignItems:'center', gap:'14px', marginBottom:'8px' }}>
+            <Target size={36} color="#6366F1" />
+            <h1 style={{ margin:0, fontSize:'2.5rem', fontWeight:800 }}>Quest Modules</h1>
           </div>
-          <div style={{ textAlign: 'right', background: 'rgba(245, 158, 11, 0.1)', padding: '12px 20px', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.2)', boxShadow: '0 0 20px rgba(245,158,11,0.05) inset' }}>
-            <div style={{ color: '#F59E0B', fontWeight: 800, fontSize: '1.5rem' }}>{quest.base_xp || 0} XP</div>
-            <div style={{ color: '#94A3B8', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>{quest.difficulty || 'Normal'}</div>
-          </div>
+          <p style={{ color:'#64748B', margin:0, fontSize: '1.05rem' }}>Access prioritized training data and earn XP rewards.</p>
         </div>
-
-        <div style={{ background: 'rgba(5, 7, 10, 0.6)', padding: '32px', borderRadius: '16px', borderLeft: '4px solid #10B981', marginBottom: '40px' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: 0, color: '#F8FAFC', fontSize: '1.3rem' }}>
-            <Target size={24} color="#10B981" /> Problem Statement
-          </h3>
-          <p style={{ color: '#E2E8F0', lineHeight: 1.8, fontSize: '1.15rem', margin: 0, whiteSpace: 'pre-line', fontFamily: '"Georgia", serif', letterSpacing: '0.3px' }}>
-            {quest.description}
-          </p>
+        
+        <div style={{ textAlign:'right', background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.2)', padding:'14px 24px', borderRadius:'16px' }}>
+          <div style={{ color:'#10B981', fontSize:'1.8rem', fontWeight:800, lineHeight: 1 }}>{completed}/{quests.length}</div>
+          <div style={{ color:'#64748B', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px' }}>Status: Ready</div>
         </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group slide-up delay-100">
-            <label className="form-label" style={{ fontSize: '1rem', color: '#E2E8F0', marginBottom: '12px' }}>Your Solution / Final Answer</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              value={solution}
-              onChange={(e) => setSolution(e.target.value)}
-              placeholder="Enter numerical answer, equation, or proof code here..."
-              required
-              style={{ fontSize: '1.2rem', padding: '20px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(99,102,241,0.3)' }}
-              onFocus={(e) => e.currentTarget.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.4)'}
-              onBlur={(e) => e.currentTarget.style.boxShadow = 'none'}
-            />
-          </div>
-
-          {error && (
-            <div className="fade-in" style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #EF4444', color: '#FCA5A5', borderRadius: '12px', marginTop: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <AlertTriangle size={20} />
-              <div>{error}</div>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px' }} className="slide-up delay-200">
-            <button type="submit" className={`btn ${submitting ? 'btn-outline' : 'btn-success'}`} disabled={submitting || !solution} style={{ padding: '16px 40px', fontSize: '1.2rem', minWidth: '220px' }}>
-              {submitting ? (
-                 <><Disc size={20} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} /> Verifying...</>
-              ) : (
-                 <><Zap size={20} /> Submit Answer</>
-              )}
-            </button>
-          </div>
-        </form>
       </div>
+
+      {/* Filter Bar */}
+      <div style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', color: '#E2E8F0', fontWeight: 600 }}>
+          <Filter size={18} color="#6366F1" /> Filter by Discipline
+        </div>
+        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'none' }}>
+          <button 
+            className={`filter-btn ${selectedSubjectId === 'all' ? 'active' : ''}`}
+            onClick={() => setSelectedSubjectId('all')}
+          >
+            <Layers size={14} /> All Modules
+          </button>
+          {subjects.map(sub => (
+            <button 
+              key={sub.id}
+              className={`filter-btn ${selectedSubjectId === sub.id ? 'active' : ''}`}
+              onClick={() => setSelectedSubjectId(sub.id)}
+            >
+              <BookOpen size={14} /> {sub.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* List */}
+      {filteredQuests.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '80px', background: 'rgba(0,0,0,0.2)', borderRadius: '24px', border: '1px dashed rgba(255,255,255,0.05)' }}>
+          <Disc size={48} color="#334155" style={{ marginBottom: '16px', opacity: 0.3 }} />
+          <h3 style={{ color: '#94A3B8', margin: 0 }}>No modules found in this discipline.</h3>
+        </div>
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column', gap: '14px' }}>
+          {filteredQuests.map((q, i) => (
+            <div key={q.id} className="qrow slide-up"
+              style={{ background:'rgba(10,13,20,0.85)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'20px', padding:'24px 32px', display:'flex', alignItems:'center', gap:'24px', animationDelay:`${i*30}ms` }}
+              onClick={() => navigate(`/quest/${q.id}`)}>
+              
+              {/* Robust completion check */}
+              {(() => {
+                 const isDone = (
+                   q.isCompletedToday === true || 
+                   q.isCompleted === true || 
+                   q.isCompletedEver === true ||
+                   q.alreadyCompletedEver === true || 
+                   q.already_completed_ever === true ||
+                   q.isSolved === true ||
+                   q.is_completed === true ||
+                   (q.completedDateUtc !== undefined && q.completedDateUtc !== null) ||
+                   (q.userSelectedOptionIndex !== undefined && q.userSelectedOptionIndex !== null) ||
+                   (q.userAnswerIndex !== undefined && q.userAnswerIndex !== null) ||
+                   (q.selectedOptionIndex !== undefined && q.selectedOptionIndex !== null)
+                 );
+                 
+                 const d = diffMap[q.difficulty] || diffMap[1];
+                 const subjectName = getSubjectName(q.subject_id || q.subjectId);
+
+                 return (
+                   <>
+                      <div style={{ width:'48px', height:'48px', borderRadius:'14px', background: isDone ? 'rgba(16, 185, 129, 0.05)' : 'rgba(99,102,241,0.08)', border: isDone ? '1px solid rgba(16, 185, 129, 0.15)' : '1px solid rgba(99,102,241,0.15)', display:'flex', alignItems:'center', justifyContent:'center', color: isDone ? '#10B981' : '#818CF8', fontWeight:900, fontSize:'1.1rem', flexShrink:0 }}>
+                        {isDone ? <CheckCircle size={20} /> : i + 1}
+                      </div>
+
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div className="subject-badge">{subjectName}</div>
+                        <div style={{ display:'flex', alignItems:'center', gap: '12px' }}>
+                          <span style={{ 
+                            fontWeight:700, fontSize: '1.2rem', 
+                            color: isDone ? '#64748B' : '#F8FAFC', 
+                            whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' 
+                          }}>{q.title}</span>
+                          {q.isPremiumOnly && <Lock size={14} color="#F59E0B" />}
+                        </div>
+                      </div>
+
+                      <div style={{ display:'flex', alignItems:'center', gap:'24px', flexShrink:0 }}>
+                        <div style={{ textAlign: 'right' }}>
+                           <div style={{ background:d.bg, color:d.color, fontSize:'0.7rem', fontWeight:800, padding:'3px 12px', borderRadius:'20px', textTransform:'uppercase', letterSpacing:'1px', marginBottom: '6px', border: `1px solid ${d.color}22` }}>{d.label}</div>
+                           <div style={{ color:'#F59E0B', fontWeight:900, fontSize:'1.1rem', letterSpacing: '0.5px' }}>+{q.baseXp || q.xpReward || 0} XP</div>
+                        </div>
+                        {isDone ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircle size={28} color="#10B981" style={{ filter: 'drop-shadow(0 0 10px rgba(16,185,129,0.3))' }} />
+                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#10B981', textTransform: 'uppercase' }}>Done</span>
+                          </div>
+                        ) : (
+                          <ChevronRight size={28} color="#334155" />
+                        )}
+                      </div>
+                   </>
+                 );
+              })()}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -33,10 +33,18 @@ export const AuthProvider = ({ children }) => {
       const token = getCookie('risen_token');
       if (token) {
         try {
-          // Verify token and get user/stats
-          const { data } = await api.get('/Auth/me');
-          setUser(data.user);
-          setStats(data.stats);
+          // Verify token and get user/stats from the flat response object
+          const { data } = await api.get('/Me');
+          const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
+          setUser(data);
+          
+          const combinedStats = { ...(data.stats || data) };
+          if (rankData) {
+            combinedStats.globalRank = rankData.rank || rankData;
+            if (rankData.rank) combinedStats.rank = rankData.rank;
+          }
+          setStats(combinedStats);
+          
           setIsAuthenticated(true);
           setIsAdmin(checkAdminRole(token));
         } catch (error) {
@@ -73,9 +81,16 @@ export const AuthProvider = ({ children }) => {
 
     // Fetch stats right after login
     try {
-      const statsRes = await api.get('/Auth/me');
-      if (statsRes.data.user) setUser(statsRes.data.user);
-      if (statsRes.data.stats) setStats(statsRes.data.stats);
+      const { data: meData } = await api.get('/Me');
+      const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
+      setUser(meData);
+      
+      const combinedStats = { ...(meData.stats || meData) };
+      if (rankData) {
+        combinedStats.globalRank = rankData.rank || rankData;
+        if (rankData.rank) combinedStats.rank = rankData.rank;
+      }
+      setStats(combinedStats);
     } catch (e) {
       console.error(e);
     }
@@ -110,9 +125,16 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
 
     try {
-      const statsRes = await api.get('/Auth/me');
-      if (statsRes.data.user) setUser(statsRes.data.user);
-      if (statsRes.data.stats) setStats(statsRes.data.stats);
+      const { data: meData } = await api.get('/Me');
+      const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
+      setUser(meData);
+      
+      const combinedStats = { ...(meData.stats || meData) };
+      if (rankData) {
+        combinedStats.globalRank = rankData.rank || rankData;
+        if (rankData.rank) combinedStats.rank = rankData.rank;
+      }
+      setStats(combinedStats);
     } catch (e) {
       console.error(e);
     }
@@ -143,9 +165,9 @@ export const AuthProvider = ({ children }) => {
       setIsAdmin(checkAdminRole(returnedToken));
 
       try {
-        const statsRes = await api.get('/Auth/me');
-        setUser(statsRes.data.user);
-        setStats(statsRes.data.stats);
+        const { data: meData } = await api.get('/Me');
+        setUser(meData);
+        setStats(meData.stats);
       } catch (e) {
         console.error("Failed to fetch user details after reset:", e);
       }
@@ -156,8 +178,16 @@ export const AuthProvider = ({ children }) => {
 
   const refreshStats = async () => {
     try {
-      const { data } = await api.get('/Auth/me');
-      setStats(data.stats);
+      const { data } = await api.get('/Me');
+      const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
+      
+      const combinedStats = { ...(data.stats || data) };
+      if (rankData) {
+        combinedStats.globalRank = rankData.rank || rankData;
+        if (rankData.rank) combinedStats.rank = rankData.rank;
+      }
+      setStats(combinedStats);
+      setUser(data);
     } catch (error) {
       console.error("Failed to refresh stats", error);
     }

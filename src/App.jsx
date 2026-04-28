@@ -8,8 +8,10 @@ import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Subjects from './pages/Subjects';
 import Quest from './pages/Quest';
+import QuestDetail from './pages/QuestDetail';
 import Leaderboards from './pages/Leaderboards';
 import Pricing from './pages/Pricing';
+import Profile from './pages/Profile';
 import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
@@ -40,8 +42,10 @@ function App() {
           {/* Protected Routes */}
           <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/subjects" element={isAuthenticated ? <Subjects /> : <Navigate to="/login" />} />
-          <Route path="/quest/:id" element={isAuthenticated ? <Quest /> : <Navigate to="/login" />} />
+          <Route path="/quest" element={isAuthenticated ? <Quest /> : <Navigate to="/login" />} />
+          <Route path="/quest/:id" element={isAuthenticated ? <QuestDetail /> : <Navigate to="/login" />} />
           <Route path="/leaderboards" element={isAuthenticated ? <Leaderboards /> : <Navigate to="/login" />} />
+          <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/pricing" element={<Pricing />} />
           
           {/* Admin Routes */}

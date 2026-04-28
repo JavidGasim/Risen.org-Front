@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
-import { Trophy, Globe, MapPin, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Trophy, Globe, GraduationCap, AlertTriangle, Disc, Target } from 'lucide-react';
 
 const Leaderboards = () => {
+  const { user } = useAuth();
   const [globalData, setGlobalData] = useState([]);
-  const [localData, setLocalData] = useState([]);
+  const [uniData, setUniData] = useState([]);
+  const [myRank, setMyRank] = useState(null);
   const [activeTab, setActiveTab] = useState('global');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -14,19 +17,22 @@ const Leaderboards = () => {
       setLoading(true);
       setError('');
       try {
-        const [globalRes, localRes] = await Promise.all([
-          api.get('/Leaderboard?limit=25&type=global'),
-          api.get('/Leaderboard/local?country=AZ&limit=25') // Defaulting AZ for MVP demo from MVP docs
+        const [globalRes, uniRes, rankRes] = await Promise.all([
+          api.get('/Leaderboards/global', { params: { limit: 50 } }),
+          api.get('/Leaderboards/my-university', { params: { limit: 50 } }).catch(() => ({ data: { items: [] } })),
+          api.get('/Leaderboards/my-rank').catch(() => ({ data: null }))
         ]);
         
-        const gData = globalRes.data?.data || globalRes.data?.items || globalRes.data || [];
-        const lData = localRes.data?.data || localRes.data?.items || localRes.data || [];
+        // Map items from the wrapper object { items, total, ... }
+        const gItems = globalRes.data?.items || [];
+        const uItems = uniRes.data?.items || [];
         
-        setGlobalData(Array.isArray(gData) ? gData : []);
-        setLocalData(Array.isArray(lData) ? lData : []);
+        setGlobalData(gItems);
+        setUniData(uItems);
+        setMyRank(rankRes.data);
       } catch (err) {
         console.error("Leaderboard error", err);
-        setError("Unable to sync leaderboard rankings. Data might be outdated or server is down.");
+        setError("Neural synchronization failed. Rankings are temporarily unavailable.");
       } finally {
         setLoading(false);
       }
@@ -34,117 +40,121 @@ const Leaderboards = () => {
     fetchLeaderboards();
   }, []);
 
-  const dataToDisplay = activeTab === 'global' ? globalData : localData;
+  const dataToDisplay = activeTab === 'global' ? globalData : uniData;
 
-  const getRankColor = (index) => {
-    if (index === 0) return '#F59E0B'; // Gold
-    if (index === 1) return '#94A3B8'; // Silver
-    if (index === 2) return '#D97706'; // Bronze
-    return '#E2E8F0'; // Default
+  const getRankColor = (rank) => {
+    if (rank === 1) return '#F59E0B'; // Gold
+    if (rank === 2) return '#94A3B8'; // Silver
+    if (rank === 3) return '#D97706'; // Bronze
+    return '#E2E8F0'; 
   };
 
-  const getRankBackground = (index) => {
-    if (index === 0) return 'linear-gradient(90deg, rgba(245, 158, 11, 0.15), transparent)';
-    if (index === 1) return 'linear-gradient(90deg, rgba(148, 163, 184, 0.1), transparent)';
-    if (index === 2) return 'linear-gradient(90deg, rgba(217, 119, 6, 0.1), transparent)';
+  const getRankBackground = (rank) => {
+    if (rank === 1) return 'linear-gradient(90deg, rgba(245, 158, 11, 0.1), transparent)';
+    if (rank === 2) return 'linear-gradient(90deg, rgba(148, 163, 184, 0.08), transparent)';
+    if (rank === 3) return 'linear-gradient(90deg, rgba(217, 119, 6, 0.08), transparent)';
     return 'transparent';
   };
 
+  if (loading) return (
+    <div className="flex-center fade-in" style={{ minHeight: '60vh', flexDirection: 'column', gap: '20px' }}>
+      <style>{`@keyframes spin{100%{transform:rotate(360deg)}}`}</style>
+      <Disc size={48} color="#6366F1" className="animate-spin" style={{ animation: 'spin 1.5s linear infinite' }} />
+      <div style={{ color: '#94A3B8', fontSize: '1.1rem', letterSpacing: '1px' }}>CALCULATING HIERARCHY...</div>
+    </div>
+  );
+
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto' }} className="fade-in">
-      <div style={{ textAlign: 'center', marginBottom: '40px' }} className="slide-up">
-        <Trophy size={64} color="#F59E0B" style={{ margin: '0 auto 16px', filter: 'drop-shadow(0 0 15px rgba(245,158,11,0.5))' }} />
-        <h1 style={{ fontSize: '3rem', marginBottom: '8px' }}>Global <span className="text-gradient">Rankings</span></h1>
-        <p style={{ color: '#94A3B8', fontSize: '1.2rem' }}>See how you rank against the best engineers worldwide.</p>
+    <div style={{ maxWidth: '1000px', margin: '0 auto' }} className="fade-in">
+      <div style={{ textAlign: 'center', marginBottom: '48px' }} className="slide-up">
+        <Trophy size={64} color="#F59E0B" style={{ margin: '0 auto 20px', filter: 'drop-shadow(0 0 15px rgba(245,158,11,0.5))' }} />
+        <h1 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '8px' }}>Risen <span className="text-gradient">Leaderboards</span></h1>
+        <p style={{ color: '#94A3B8', fontSize: '1.2rem' }}>Global and institutional rankings for top-tier engineers.</p>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '32px' }} className="slide-up delay-100">
+      {/* Tabs */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '40px' }} className="slide-up">
         <button 
           onClick={() => setActiveTab('global')}
-          className={`btn ${activeTab === 'global' ? 'btn-primary' : 'btn-outline'}`}
-          style={{ width: '180px', padding: '12px', fontSize: '1.05rem', boxShadow: activeTab === 'global' ? '0 0 20px rgba(99,102,241,0.4)' : 'none' }}
+          style={{ 
+            display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 32px', 
+            borderRadius: '16px', border: activeTab === 'global' ? '1px solid #6366F1' : '1px solid rgba(255,255,255,0.05)',
+            background: activeTab === 'global' ? 'rgba(99,102,241,0.1)' : 'rgba(15,23,42,0.4)',
+            color: activeTab === 'global' ? '#fff' : '#94A3B8', cursor: 'pointer', transition: 'all 0.2s',
+            fontWeight: 700, fontSize: '1rem', boxShadow: activeTab === 'global' ? '0 0 30px rgba(99,102,241,0.2)' : 'none'
+          }}
         >
-          <Globe size={20} /> Global Top
+          <Globe size={20} color={activeTab === 'global' ? '#6366F1' : '#94A3B8'} /> Global
         </button>
         <button 
-          onClick={() => setActiveTab('local')}
-          className={`btn ${activeTab === 'local' ? 'btn-success' : 'btn-outline'}`}
-          style={{ width: '180px', padding: '12px', fontSize: '1.05rem', boxShadow: activeTab === 'local' ? '0 0 20px rgba(16,185,129,0.4)' : 'none' }}
+          onClick={() => setActiveTab('university')}
+          style={{ 
+            display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 32px', 
+            borderRadius: '16px', border: activeTab === 'university' ? '1px solid #10B981' : '1px solid rgba(255,255,255,0.05)',
+            background: activeTab === 'university' ? 'rgba(16,185,129,0.1)' : 'rgba(15,23,42,0.4)',
+            color: activeTab === 'university' ? '#fff' : '#94A3B8', cursor: 'pointer', transition: 'all 0.2s',
+            fontWeight: 700, fontSize: '1rem', boxShadow: activeTab === 'university' ? '0 0 30px rgba(16,185,129,0.2)' : 'none'
+          }}
         >
-          <MapPin size={20} /> Local (AZ)
+          <GraduationCap size={20} color={activeTab === 'university' ? '#10B981' : '#94A3B8'} /> {user?.university?.name || 'University'}
         </button>
       </div>
 
       {error ? (
-        <div className="slide-up delay-200" style={{ padding: '24px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #EF4444', color: '#FCA5A5', borderRadius: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-          <AlertTriangle size={32} />
-          <div style={{ fontSize: '1.1rem' }}>{error}</div>
-        </div>
-      ) : loading ? (
-        <div className="flex-center slide-up delay-200" style={{ padding: '60px', flexDirection: 'column', gap: '16px' }}>
-          <div className="animate-pulse-glow" style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#6366F1' }}></div>
-          <div style={{ color: '#94A3B8', fontSize: '1.1rem' }}>Compiling rankings...</div>
+        <div style={{ padding: '40px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#FCA5A5', borderRadius: '24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <AlertTriangle size={48} />
+          <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{error}</div>
         </div>
       ) : (
-        <div className="premium-card slide-up delay-200 tab-content" key={activeTab} style={{ padding: 0 }}>
-          <div style={{ padding: '20px 32px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'grid', gridTemplateColumns: '80px 1fr 150px 120px 150px', gap: '16px', color: '#94A3B8', fontWeight: 600, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+        <div className="premium-card slide-up" key={activeTab} style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '24px 32px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'grid', gridTemplateColumns: '80px 1fr 200px 140px', gap: '20px', color: '#64748B', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
             <div>Rank</div>
             <div>Engineer</div>
             <div>League</div>
             <div style={{ textAlign: 'right' }}>Total XP</div>
-            <div style={{ textAlign: 'right' }}>Risen Score</div>
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {dataToDisplay.map((user, index) => (
+            {dataToDisplay.map((u) => (
               <div 
-                key={user.id || index} 
+                key={u.userId} 
                 style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: '80px 1fr 150px 120px 150px', 
-                  gap: '16px', 
-                  padding: '20px 32px', 
-                  alignItems: 'center',
+                  display: 'grid', gridTemplateColumns: '80px 1fr 200px 140px', gap: '20px', 
+                  padding: '24px 32px', alignItems: 'center',
                   borderBottom: '1px solid rgba(255,255,255,0.03)',
-                  background: getRankBackground(index),
-                  transition: 'background 0.2s'
+                  background: getRankBackground(u.rank),
+                  transition: 'all 0.2s'
                 }}
-                onMouseEnter={(e) => {
-                  if(index > 2) e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
-                }}
-                onMouseLeave={(e) => {
-                  if(index > 2) e.currentTarget.style.background = 'transparent';
-                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = getRankBackground(u.rank); }}
               >
-                <div style={{ fontWeight: 800, fontSize: '1.2rem', color: getRankColor(index) }}>
-                  #{index + 1}
+                <div style={{ fontWeight: 900, fontSize: '1.4rem', color: getRankColor(u.rank), fontStyle: 'italic' }}>
+                  #{u.rank}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#818CF8', fontWeight: 700, fontSize: '1.1rem' }}>
-                    {(user.name || user.firstName || 'U')[0].toUpperCase()}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#818CF8', fontWeight: 800, fontSize: '1.2rem' }}>
+                    {(u.displayName || 'U')[0].toUpperCase()}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '1.05rem', color: '#F8FAFC' }}>{user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim()}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#6366F1' }}>{user.country || 'Global'}</div>
+                    <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#F8FAFC' }}>{u.displayName}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                       <Target size={12} /> {u.universityName || 'Risen Engineer'}
+                    </div>
                   </div>
                 </div>
-                <div style={{ fontWeight: 500, color: '#CBD5E1' }}>
-                  {user.current_league || 'Rookie'}
+                <div style={{ fontWeight: 600, color: '#94A3B8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {u.league || 'Rookie'}
                 </div>
-                <div style={{ textAlign: 'right', color: '#10B981', fontWeight: 700, fontSize: '1.05rem' }}>
-                  {user.total_xp || 0}
-                </div>
-                <div style={{ textAlign: 'right', fontWeight: 800, fontSize: '1.1rem', color: '#F8FAFC', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
-                  {user.risen_score || '0.00'}
+                <div style={{ textAlign: 'right', color: '#10B981', fontWeight: 800, fontSize: '1.2rem' }}>
+                  {u.totalXp.toLocaleString()}
                 </div>
               </div>
             ))}
-            {dataToDisplay.length === 0 && !error && (
-              <div style={{ padding: '60px', textAlign: 'center', color: '#94A3B8' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                  <Globe size={48} color="rgba(255,255,255,0.1)" />
-                  <div>No engineers ranked yet. Be the first to secure a spot!</div>
-                </div>
+            
+            {dataToDisplay.length === 0 && (
+              <div style={{ padding: '80px 40px', textAlign: 'center', color: '#64748B' }}>
+                <Globe size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
+                <div style={{ fontSize: '1.1rem' }}>No rankings available in this sector.</div>
               </div>
             )}
           </div>
