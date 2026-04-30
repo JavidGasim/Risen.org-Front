@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { Trophy, Globe, GraduationCap, AlertTriangle, Disc, Target } from 'lucide-react';
+import { Trophy, Globe, GraduationCap, AlertTriangle, Disc, Target, Zap } from 'lucide-react';
 
 const Leaderboards = () => {
   const { user } = useAuth();
   const [globalData, setGlobalData] = useState([]);
   const [uniData, setUniData] = useState([]);
+  const [leagueData, setLeagueData] = useState([]);
   const [myRank, setMyRank] = useState(null);
   const [activeTab, setActiveTab] = useState('global');
   const [loading, setLoading] = useState(true);
@@ -17,18 +18,21 @@ const Leaderboards = () => {
       setLoading(true);
       setError('');
       try {
-        const [globalRes, uniRes, rankRes] = await Promise.all([
+        const [globalRes, uniRes, leagueRes, rankRes] = await Promise.all([
           api.get('/Leaderboards/global', { params: { limit: 50 } }),
           api.get('/Leaderboards/my-university', { params: { limit: 50 } }).catch(() => ({ data: { items: [] } })),
+          api.get('/Leaderboards/my-league', { params: { limit: 50 } }).catch(() => ({ data: { items: [] } })),
           api.get('/Leaderboards/my-rank').catch(() => ({ data: null }))
         ]);
         
         // Map items from the wrapper object { items, total, ... }
         const gItems = globalRes.data?.items || [];
         const uItems = uniRes.data?.items || [];
+        const lItems = leagueRes.data?.items || [];
         
         setGlobalData(gItems);
         setUniData(uItems);
+        setLeagueData(lItems);
         setMyRank(rankRes.data);
       } catch (err) {
         console.error("Leaderboard error", err);
@@ -40,7 +44,7 @@ const Leaderboards = () => {
     fetchLeaderboards();
   }, []);
 
-  const dataToDisplay = activeTab === 'global' ? globalData : uniData;
+  const dataToDisplay = activeTab === 'global' ? globalData : (activeTab === 'university' ? uniData : leagueData);
 
   const getRankColor = (rank) => {
     if (rank === 1) return '#F59E0B'; // Gold
@@ -96,7 +100,19 @@ const Leaderboards = () => {
             fontWeight: 700, fontSize: '1rem', boxShadow: activeTab === 'university' ? '0 0 30px rgba(16,185,129,0.2)' : 'none'
           }}
         >
-          <GraduationCap size={20} color={activeTab === 'university' ? '#10B981' : '#94A3B8'} /> {user?.university?.name || 'University'}
+          <GraduationCap size={20} color={activeTab === 'university' ? '#10B981' : '#94A3B8'} /> {user?.universityName || user?.university?.name || 'University'}
+        </button>
+        <button 
+          onClick={() => setActiveTab('league')}
+          style={{ 
+            display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 32px', 
+            borderRadius: '16px', border: activeTab === 'league' ? '1px solid #F59E0B' : '1px solid rgba(255,255,255,0.05)',
+            background: activeTab === 'league' ? 'rgba(245,158,11,0.1)' : 'rgba(15,23,42,0.4)',
+            color: activeTab === 'league' ? '#fff' : '#94A3B8', cursor: 'pointer', transition: 'all 0.2s',
+            fontWeight: 700, fontSize: '1rem', boxShadow: activeTab === 'league' ? '0 0 30px rgba(245,158,11,0.2)' : 'none'
+          }}
+        >
+          <Zap size={20} color={activeTab === 'league' ? '#F59E0B' : '#94A3B8'} /> {user?.league || 'League'}
         </button>
       </div>
 

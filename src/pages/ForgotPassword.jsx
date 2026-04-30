@@ -18,24 +18,8 @@ const ForgotPassword = () => {
     setMessage('');
     setLoading(true);
     try {
-      const response = await forgotPassword(email);
-      
-      // If backend returned a raw token (for development testing), display a handy link.
-      const returnedToken = typeof response === 'string' ? response : (response?.token || response?.Token);
-      
-      if (returnedToken) {
-        const resetUrl = `${window.location.origin}/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(returnedToken)}`;
-        setMessage(
-          <div>
-            <p>Development Only - Token generated!</p>
-            <a href={resetUrl} style={{ color: '#10B981', textDecoration: 'underline', wordBreak: 'break-all' }}>
-              Click here to test your Reset Password link
-            </a>
-          </div>
-        );
-      } else {
-        setMessage('If an account exists with that email, a password reset link has been sent.');
-      }
+      await forgotPassword(email);
+      setMessage('If an account exists with that email, a password reset link has been sent to your inbox.');
     } catch (err) {
       const data = err.response?.data;
       const errorMsg = data?.message || data?.detail || data?.title || err.message || 'Failed to process request';
