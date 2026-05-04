@@ -2,16 +2,17 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { 
-  Target, Zap, ChevronLeft, ChevronRight, CheckCircle, 
-  AlertTriangle, Disc, Trophy, BookOpen, MessageSquare
+import {
+  Target, Zap, ChevronLeft, ChevronRight, CheckCircle,
+  AlertTriangle, Disc, Trophy, BookOpen, MessageSquare, Lock
 } from 'lucide-react';
 
 const QuestDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { refreshStats } = useAuth();
-  
+  const { refreshStats, user } = useAuth();
+  const isPremiumUser = user?.plan === 'Premium';
+
   const [quest, setQuest] = useState(null);
   const [subjects, setSubjects] = useState([]);
   const [allQuests, setAllQuests] = useState([]);
@@ -30,11 +31,11 @@ const QuestDetail = () => {
           api.get('/QuestsFeed/all').catch(() => ({ data: [] })),
           api.get('/Subjects').catch(() => ({ data: [] }))
         ]);
-        
+
         const todayItems = todayRes.data?.items || [];
         const allItems = Array.isArray(allRes.data) ? allRes.data : (allRes.data?.items || []);
         const subList = subRes.data?.subjects || subRes.data?.items || subRes.data || [];
-        
+
         setAllQuests(allItems);
         setSubjects(subList);
 
@@ -61,10 +62,10 @@ const QuestDetail = () => {
   }, [id]);
 
   const isCompleted = quest ? (
-    quest.isCompletedToday === true || 
-    quest.isCompleted === true || 
+    quest.isCompletedToday === true ||
+    quest.isCompleted === true ||
     quest.isCompletedEver === true ||
-    quest.alreadyCompletedEver === true || 
+    quest.alreadyCompletedEver === true ||
     quest.already_completed_ever === true ||
     quest.isSolved === true ||
     quest.is_completed === true ||
@@ -83,11 +84,11 @@ const QuestDetail = () => {
       if (prevSelection !== undefined && prevSelection !== null) {
         setSelectedOption(prevSelection);
       }
-      
+
       // If we have completion data, show the result immediately
       const correctIdxValue = quest.correctOptionIndex ?? quest.correctIndex;
       const isCorrectValue = quest.isCorrect ?? quest.is_correct ?? (prevSelection !== undefined && prevSelection === correctIdxValue);
-      
+
       if (isCorrectValue !== undefined || correctIdxValue !== undefined) {
         setResult({
           isCorrect: isCorrectValue,
@@ -109,11 +110,11 @@ const QuestDetail = () => {
     setError('');
     try {
       // POST /api/Quests/submit { questId, selectedIndex }
-      const { data } = await api.post(`/Quests/submit`, { 
-        questId: id, 
-        selectedIndex: selectedOption 
+      const { data } = await api.post(`/Quests/submit`, {
+        questId: id,
+        selectedIndex: selectedOption
       });
-      
+
       // Normalize response for the UI
       setResult({
         isCorrect: data.isCorrect,
@@ -125,7 +126,7 @@ const QuestDetail = () => {
           streak: data.currentStreak
         }
       });
-      
+
       refreshStats();
     } catch (err) {
       console.error("Submission error:", err);
@@ -135,9 +136,10 @@ const QuestDetail = () => {
     }
   };
 
-  const currentIndex = allQuests.findIndex(q => q.id === id);
-  const prevQuest = currentIndex > 0 ? allQuests[currentIndex - 1] : null;
-  const nextQuest = currentIndex < allQuests.length - 1 ? allQuests[currentIndex + 1] : null;
+  const accessibleQuests = allQuests.filter(q => isPremiumUser || !q.isPremiumOnly);
+  const currentIndex = accessibleQuests.findIndex(q => q.id === id);
+  const prevQuest = currentIndex > 0 ? accessibleQuests[currentIndex - 1] : null;
+  const nextQuest = currentIndex < accessibleQuests.length - 1 ? accessibleQuests[currentIndex + 1] : null;
 
   if (loading) return (
     <div className="flex-center fade-in" style={{ minHeight: '60vh', flexDirection: 'column', gap: '20px' }}>
@@ -154,6 +156,20 @@ const QuestDetail = () => {
       <Link to="/quest" className="btn btn-outline" style={{ marginTop: '16px' }}>Return to Archive</Link>
     </div>
   );
+
+  // Add Premium Check
+  if (quest.isPremiumOnly && !isPremiumUser) {
+    return (
+      <div className="flex-center fade-in" style={{ minHeight: '60vh', flexDirection: 'column', gap: '20px' }}>
+        <Lock size={64} color="#F59E0B" style={{ filter: 'drop-shadow(0 0 20px rgba(245,158,11,0.4))' }} />
+        <h2 style={{ fontSize: '2rem', fontWeight: 800, color: '#FCD34D', margin: 0 }}>Classified Premium Module</h2>
+        <p style={{ color: '#94A3B8', fontSize: '1.1rem', maxWidth: '400px', textAlign: 'center', lineHeight: 1.6 }}>
+          This data is restricted. You must hold an active Premium clearance level to analyze this intelligence.
+        </p>
+        <Link to="/quest" className="btn btn-outline" style={{ marginTop: '24px', borderColor: 'rgba(245,158,11,0.3)', color: '#F59E0B' }}>Return to Open Archive</Link>
+      </div>
+    );
+  }
 
   const isCorrect = result ? result.isCorrect : (quest.isCorrect ?? quest.is_correct);
   const options = quest.options || [];
@@ -186,21 +202,21 @@ const QuestDetail = () => {
       <div className="premium-card slide-up" style={{ padding: '48px', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
           <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(99, 102, 241, 0.15)', color: '#818CF8', padding: '6px 14px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                  <BookOpen size={14} /> {subjectName}
-                </div>
-                {isCompleted && (
-                  <div style={{ 
-                    display: 'flex', alignItems: 'center', gap: '6px', 
-                    background: (result ? isCorrect : quest.isCorrect === true) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', 
-                    color: (result ? isCorrect : quest.isCorrect === true) ? '#10B981' : '#EF4444', 
-                    padding: '6px 14px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800 
-                  }}>
-                    {(result ? isCorrect : quest.isCorrect === true) ? <><CheckCircle size={14} /> Correct</> : <><AlertTriangle size={14} /> Incorrect</>}
-                  </div>
-                )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(99, 102, 241, 0.15)', color: '#818CF8', padding: '6px 14px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <BookOpen size={14} /> {subjectName}
               </div>
+              {isCompleted && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: (result ? isCorrect : quest.isCorrect === true) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                  color: (result ? isCorrect : quest.isCorrect === true) ? '#10B981' : '#EF4444',
+                  padding: '6px 14px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800
+                }}>
+                  {(result ? isCorrect : quest.isCorrect === true) ? <><CheckCircle size={14} /> Correct</> : <><AlertTriangle size={14} /> Incorrect</>}
+                </div>
+              )}
+            </div>
             <h1 style={{ margin: 0, fontSize: '2.8rem', fontWeight: 800, color: '#F8FAFC', lineHeight: 1.1, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
               {quest.title || quest.questionText}
               {isCompleted && (
@@ -215,21 +231,21 @@ const QuestDetail = () => {
         </div>
 
         {/* Removed Description as requested, keeping options as primary focus */}
-        
+
         {options.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
             <h3 style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>Select Solution:</h3>
             {options.map((opt, idx) => {
               const optIndex = opt.index !== undefined ? opt.index : idx;
-              
+
               // Determine if this option is selected (either currently or in history)
               const isSelected = selectedOption === optIndex || quest.userSelectedOptionIndex === optIndex || quest.userAnswerIndex === optIndex || quest.selectedOptionIndex === optIndex;
-              
+
               // Determine if this is the correct option
               const isCorrectOption = result ? result.correctIndex === optIndex : (quest.correctOptionIndex === optIndex || quest.correctIndex === optIndex);
-              
+
               const isWrongSelection = (result || isCompleted) && isSelected && !isCorrectOption;
-              
+
               let borderColor = 'rgba(255,255,255,0.08)';
               let bgColor = 'rgba(15, 23, 42, 0.4)';
               let textColor = '#E2E8F0';
@@ -264,8 +280,8 @@ const QuestDetail = () => {
                     display: 'flex', alignItems: 'center', gap: '20px', fontSize: '1.1rem', fontWeight: isSelected ? 600 : 400
                   }}
                 >
-                  <div style={{ 
-                    width: '36px', height: '36px', borderRadius: '10px', 
+                  <div style={{
+                    width: '36px', height: '36px', borderRadius: '10px',
                     background: isSelected ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '1rem', fontWeight: 900, flexShrink: 0
@@ -293,7 +309,7 @@ const QuestDetail = () => {
               <h4 style={{ margin: '0 0 6px 0', color: isCorrect ? '#6EE7B7' : '#FCA5A5', fontSize: '1.3rem', fontWeight: 700 }}>{isCorrect ? 'Outstanding Achievement' : 'Target Missed'}</h4>
               <p style={{ margin: 0, color: '#E2E8F0', fontSize: '1.05rem' }}>{isCorrect ? `Analysis confirmed. +${result.xpEarned || quest.xpReward || quest.baseXp || 0} XP secured.` : 'The data provided does not match the expected output.'}</p>
               {result.explanation && (
-                 <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '0.95rem', color: '#94A3B8', borderLeft: '4px solid #6366F1', lineHeight: 1.6 }}>
+                <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '0.95rem', color: '#94A3B8', borderLeft: '4px solid #6366F1', lineHeight: 1.6 }}>
                   <strong>Intelligence Report:</strong> {result.explanation}
                 </div>
               )}
@@ -311,13 +327,13 @@ const QuestDetail = () => {
           </div>
         )}
       </div>
-      
+
       <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'center' }}>
-         {nextQuest && isCompleted && (
-           <button className="btn btn-primary" onClick={() => navigate(`/quest/${nextQuest.id}`)} style={{ padding: '16px 48px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.1rem', fontWeight: 700 }}>
-             Advance to Next Module <ChevronRight size={22} />
-           </button>
-         )}
+        {nextQuest && isCompleted && (
+          <button className="btn btn-primary" onClick={() => navigate(`/quest/${nextQuest.id}`)} style={{ padding: '16px 48px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.1rem', fontWeight: 700 }}>
+            Advance to Next Module <ChevronRight size={22} />
+          </button>
+        )}
       </div>
     </div>
   );

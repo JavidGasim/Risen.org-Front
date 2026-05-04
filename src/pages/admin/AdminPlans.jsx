@@ -5,7 +5,7 @@ import api from '../../utils/api';
 export default function AdminPlans() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -18,7 +18,9 @@ export default function AdminPlans() {
     setLoading(true);
     try {
       const { data } = await api.get('/admin/plans');
-      setPlans(data);
+      const sorted = data.sort((a, b) => a.code - b.code);
+
+      setPlans(sorted);
     } catch (error) {
       console.error("Failed to fetch plans", error);
     } finally {
@@ -41,7 +43,7 @@ export default function AdminPlans() {
       });
     } else {
       setEditingId(null);
-      setFormData({ code: 'Free', name: '' }); 
+      setFormData({ code: 'Free', name: '' });
     }
     setIsModalOpen(true);
   };
@@ -88,8 +90,8 @@ export default function AdminPlans() {
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.6)' }}>Manage membership tiers (Free, Premium, etc).</p>
         </div>
-        
-        <button 
+
+        <button
           onClick={() => handleOpenModal()}
           className="btn btn-primary"
           style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
@@ -161,7 +163,7 @@ export default function AdminPlans() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', borderRadius: '24px', position: 'relative' }}>
-            <button 
+            <button
               onClick={handleCloseModal}
               style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
             >
@@ -170,28 +172,28 @@ export default function AdminPlans() {
             <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: 'white', marginBottom: '24px' }}>
               {editingId ? 'Edit Plan' : 'Add Plan'}
             </h2>
-            
+
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label className="form-label">Plan Name *</label>
-                <input 
+                <input
                   type="text" className="form-control" required
-                  value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Free Tier"
                 />
               </div>
               <div>
                 <label className="form-label">Plan Code *</label>
-                <input 
+                <input
                   type="text" className="form-control" required
-                  value={formData.code} onChange={(e) => setFormData({...formData, code: e.target.value})}
+                  value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                   placeholder="e.g. Free, Premium"
                 />
                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
                   Must precisely match a C# PlanCode enum literal.
                 </p>
               </div>
-              
+
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
                 <button type="button" onClick={handleCloseModal} style={{ padding: '12px 24px', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}>
                   Cancel

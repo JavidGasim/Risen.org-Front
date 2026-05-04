@@ -27,7 +27,8 @@ export default function AdminLayout() {
         borderRight: '1px solid rgba(255, 255, 255, 0.1)',
         display: 'flex',
         flexDirection: 'column',
-        padding: '24px 0'
+        padding: '24px 0',
+        overflowY: 'auto'
       }}>
         <div style={{ padding: '0 24px', marginBottom: '40px' }}>
           <h1 style={{ 
@@ -75,18 +76,54 @@ export default function AdminLayout() {
         <div style={{ padding: '0 24px', marginTop: 'auto' }}>
           <button
             onClick={logout}
-            className="btn btn-secondary"
-            style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+            style={{ 
+              width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
+              padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
           >
             <LogOut size={18} />
-            Exit Admin
+            Log Out
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
-        <Outlet />
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        {/* Top Header */}
+        <header style={{ 
+          padding: '16px 40px', 
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          background: 'rgba(255, 255, 255, 0.02)'
+        }}>
+          <button
+            onClick={logout}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: '8px', 
+              background: 'transparent', color: '#ef4444', 
+              border: '1px solid rgba(239, 68, 68, 0.5)', padding: '8px 16px', borderRadius: '8px',
+              cursor: 'pointer', fontWeight: '600', transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <LogOut size={16} />
+            Log Out
+          </button>
+        </header>
+
+        <div style={{ padding: '40px', flex: 1 }}>
+          <Outlet />
+        </div>
       </main>
     </div>
   );
