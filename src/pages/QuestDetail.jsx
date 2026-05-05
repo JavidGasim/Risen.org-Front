@@ -16,6 +16,7 @@ const QuestDetail = () => {
   const [quest, setQuest] = useState(null);
   const [subjects, setSubjects] = useState([]);
   const [allQuests, setAllQuests] = useState([]);
+  const [todayQuests, setTodayQuests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -25,6 +26,10 @@ const QuestDetail = () => {
   // Fetch all metadata
   useEffect(() => {
     const loadMetadata = async () => {
+      setSelectedOption(null);
+      setResult(null);
+      setError('');
+      setLoading(true);
       try {
         const [todayRes, allRes, subRes] = await Promise.all([
           api.get('/QuestsFeed/today').catch(() => ({ data: { items: [] } })),
@@ -37,6 +42,7 @@ const QuestDetail = () => {
         const subList = subRes.data?.subjects || subRes.data?.items || subRes.data || [];
 
         setAllQuests(allItems);
+        setTodayQuests(todayItems);
         setSubjects(subList);
 
         let foundQuest = todayItems.find(q => q.id === id);
@@ -68,11 +74,16 @@ const QuestDetail = () => {
     quest.alreadyCompletedEver === true ||
     quest.already_completed_ever === true ||
     quest.isSolved === true ||
+    quest.is_solved === true ||
     quest.is_completed === true ||
     (quest.completedDateUtc !== undefined && quest.completedDateUtc !== null) ||
+    (quest.completed_date_utc !== undefined && quest.completed_date_utc !== null) ||
     (quest.userSelectedOptionIndex !== undefined && quest.userSelectedOptionIndex !== null) ||
     (quest.userAnswerIndex !== undefined && quest.userAnswerIndex !== null) ||
     (quest.selectedOptionIndex !== undefined && quest.selectedOptionIndex !== null) ||
+    (quest.user_selected_option_index !== undefined && quest.user_selected_option_index !== null) ||
+    (quest.user_answer_index !== undefined && quest.user_answer_index !== null) ||
+    (quest.selected_option_index !== undefined && quest.selected_option_index !== null) ||
     !!result
   ) : false;
 
@@ -89,6 +100,8 @@ const QuestDetail = () => {
       const correctIdxValue = quest.correctOptionIndex ?? quest.correctIndex;
       const isCorrectValue = quest.isCorrect ?? quest.is_correct ?? (prevSelection !== undefined && prevSelection === correctIdxValue);
 
+      // If we have completion data, show the result immediately
+
       if (isCorrectValue !== undefined || correctIdxValue !== undefined) {
         setResult({
           isCorrect: isCorrectValue,
@@ -99,8 +112,12 @@ const QuestDetail = () => {
     }
   }, [quest, isCompleted]);
 
-  const getSubjectName = (subjectId) => {
-    const s = subjects.find(sub => sub.id === subjectId);
+  const getSubjectName = (sid) => {
+    if (!sid) return 'General Engineering';
+    const s = subjects.find(sub => 
+      sub.id === sid || 
+      (sub.code && sub.code.toString().toLowerCase() === sid.toString().toLowerCase())
+    );
     return s ? s.name : 'General Engineering';
   };
 
@@ -117,13 +134,14 @@ const QuestDetail = () => {
 
       // Normalize response for the UI
       setResult({
-        isCorrect: data.isCorrect,
-        correctIndex: data.correctIndex,
-        xpEarned: data.awardedXp,
+        isCorrect: data.isCorrect ?? data.is_correct,
+        correctIndex: data.correctIndex ?? data.correct_index,
+        xpEarned: data.awardedXp ?? data.xp_reward ?? data.awarded_xp,
+        explanation: data.explanation || data.analysisReport || quest.explanation || quest.analysisReport,
         newStats: {
-          totalXp: data.totalXp,
+          totalXp: data.totalXp || data.total_xp,
           league: data.league,
-          streak: data.currentStreak
+          streak: data.currentStreak || data.current_streak
         }
       });
 
@@ -136,7 +154,11 @@ const QuestDetail = () => {
     }
   };
 
-  const accessibleQuests = allQuests.filter(q => isPremiumUser || !q.isPremiumOnly);
+  // Determine which list to use for navigation
+  const isFromToday = todayQuests.some(q => q.id === id);
+  const navigationList = isFromToday ? todayQuests : allQuests;
+  const accessibleQuests = navigationList.filter(q => isPremiumUser || !q.isPremiumOnly);
+  
   const currentIndex = accessibleQuests.findIndex(q => q.id === id);
   const prevQuest = currentIndex > 0 ? accessibleQuests[currentIndex - 1] : null;
   const nextQuest = currentIndex < accessibleQuests.length - 1 ? accessibleQuests[currentIndex + 1] : null;
@@ -153,7 +175,7 @@ const QuestDetail = () => {
     <div className="flex-center fade-in" style={{ minHeight: '50vh', flexDirection: 'column', gap: '16px' }}>
       <AlertTriangle size={48} color="#EF4444" />
       <div style={{ fontSize: '1.2rem', color: '#FCA5A5' }}>{error || 'Module offline.'}</div>
-      <Link to="/quest" className="btn btn-outline" style={{ marginTop: '16px' }}>Return to Archive</Link>
+      <Link to="/quest" className="btn btn-outline" style={{ marginTop: '16px' }}>Return to Missions</Link>
     </div>
   );
 
@@ -166,21 +188,23 @@ const QuestDetail = () => {
         <p style={{ color: '#94A3B8', fontSize: '1.1rem', maxWidth: '400px', textAlign: 'center', lineHeight: 1.6 }}>
           This data is restricted. You must hold an active Premium clearance level to analyze this intelligence.
         </p>
-        <Link to="/quest" className="btn btn-outline" style={{ marginTop: '24px', borderColor: 'rgba(245,158,11,0.3)', color: '#F59E0B' }}>Return to Open Archive</Link>
+        <Link to="/quest" className="btn btn-outline" style={{ marginTop: '24px', borderColor: 'rgba(245,158,11,0.3)', color: '#F59E0B' }}>Return to Missions</Link>
       </div>
     );
   }
 
-  const isCorrect = result ? result.isCorrect : (quest.isCorrect ?? quest.is_correct);
+  const isCorrect = result 
+    ? (result.isCorrect ?? result.is_correct) 
+    : (quest?.isCorrect ?? quest?.is_correct ?? (quest?.isSolved || quest?.is_solved));
   const options = quest.options || [];
-  const subjectName = getSubjectName(quest.subject_id || quest.subjectId);
+  const subjectName = getSubjectName(quest.subject_id || quest.subjectId || quest.subjectCode || quest.subjectcode);
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto' }} className="fade-in">
       {/* Header Nav */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <Link to="/quest" className="btn-link" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94A3B8', textDecoration: 'none', fontWeight: 600 }}>
-          <ChevronLeft size={18} /> Archive
+        <Link to={isCompleted ? "/quest/completed" : "/quest"} className="btn-link" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94A3B8', textDecoration: 'none', fontWeight: 600 }}>
+          <ChevronLeft size={18} /> {isCompleted ? 'Archive' : 'Daily Missions'}
         </Link>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button className="btn btn-outline" disabled={!prevQuest} onClick={() => navigate(`/quest/${prevQuest.id}`)} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -209,11 +233,11 @@ const QuestDetail = () => {
               {isCompleted && (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '6px',
-                  background: (result ? isCorrect : quest.isCorrect === true) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                  color: (result ? isCorrect : quest.isCorrect === true) ? '#10B981' : '#EF4444',
+                  background: isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                  color: isCorrect ? '#10B981' : '#EF4444',
                   padding: '6px 14px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800
                 }}>
-                  {(result ? isCorrect : quest.isCorrect === true) ? <><CheckCircle size={14} /> Correct</> : <><AlertTriangle size={14} /> Incorrect</>}
+                  {isCorrect ? <><CheckCircle size={14} /> Correct</> : <><AlertTriangle size={14} /> Incorrect</>}
                 </div>
               )}
             </div>
@@ -225,7 +249,7 @@ const QuestDetail = () => {
             </h1>
           </div>
           <div style={{ textAlign: 'center', background: 'rgba(245, 158, 11, 0.1)', padding: '16px 24px', borderRadius: '16px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-            <div style={{ color: '#F59E0B', fontWeight: 800, fontSize: '1.8rem', lineHeight: 1 }}>+{quest.xpReward || quest.baseXp || 0}</div>
+            <div style={{ color: '#F59E0B', fontWeight: 800, fontSize: '1.8rem', lineHeight: 1 }}>+{quest.xpReward || quest.baseXp || quest.awardedXp || quest.xp_reward || 0}</div>
             <div style={{ color: '#94A3B8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>XP Reward</div>
           </div>
         </div>
@@ -264,7 +288,7 @@ const QuestDetail = () => {
                   bgColor = 'rgba(239, 68, 68, 0.15)';
                   textColor = '#FCA5A5';
                 } else {
-                  opacity: 0.5;
+                  textColor = '#475569';
                 }
               }
 
@@ -289,8 +313,8 @@ const QuestDetail = () => {
                     {String.fromCharCode(65 + idx)}
                   </div>
                   <span style={{ flex: 1 }}>{opt.text || opt}</span>
-                  {result && isCorrectOption && <CheckCircle size={22} color="#10B981" />}
-                  {result && isWrongSelection && <AlertTriangle size={22} color="#EF4444" />}
+                  {(result || isCompleted) && isCorrectOption && <CheckCircle size={22} color="#10B981" style={{ filter: 'drop-shadow(0 0 10px rgba(16,185,129,0.4))' }} />}
+                  {(result || isCompleted) && isWrongSelection && <AlertTriangle size={22} color="#EF4444" />}
                 </button>
               );
             })}
@@ -307,7 +331,7 @@ const QuestDetail = () => {
             {isCorrect ? <Trophy size={36} color="#F59E0B" /> : <AlertTriangle size={36} color="#EF4444" />}
             <div>
               <h4 style={{ margin: '0 0 6px 0', color: isCorrect ? '#6EE7B7' : '#FCA5A5', fontSize: '1.3rem', fontWeight: 700 }}>{isCorrect ? 'Outstanding Achievement' : 'Target Missed'}</h4>
-              <p style={{ margin: 0, color: '#E2E8F0', fontSize: '1.05rem' }}>{isCorrect ? `Analysis confirmed. +${result.xpEarned || quest.xpReward || quest.baseXp || 0} XP secured.` : 'The data provided does not match the expected output.'}</p>
+              <p style={{ margin: 0, color: '#E2E8F0', fontSize: '1.05rem' }}>{isCorrect ? `Analysis confirmed. +${result.xpEarned || quest.xpReward || quest.baseXp || 0} XP secured.` : 'The data provided does not match the expected output. Correct solution highlighted below.'}</p>
               {result.explanation && (
                 <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', fontSize: '0.95rem', color: '#94A3B8', borderLeft: '4px solid #6366F1', lineHeight: 1.6 }}>
                   <strong>Intelligence Report:</strong> {result.explanation}

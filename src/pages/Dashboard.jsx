@@ -1,16 +1,35 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { Activity, Star, Trophy, ShieldAlert, ArrowRight, Target, Zap, Layout } from 'lucide-react';
+import { Activity, Star, Trophy, ShieldAlert, ArrowRight, Target, Zap, Layout, Archive, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, stats, refreshStats } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [recentAttempts, setRecentAttempts] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        await refreshStats();
+        const [statsRes, attemptsRes, allRes] = await Promise.all([
+          refreshStats(),
+          api.get('/QuestAttempts', { params: { limit: 5 } }).catch(() => ({ data: [] })),
+          api.get('/QuestsFeed/all').catch(() => ({ data: [] }))
+        ]);
+        
+        const attempts = attemptsRes.data || attemptsRes.data?.items || [];
+        const allQuests = Array.isArray(allRes.data) ? allRes.data : (allRes.data?.items || []);
+
+        const enriched = attempts.map(attempt => {
+          const questMetadata = allQuests.find(aq => aq.id === attempt.questId);
+          return {
+            ...attempt,
+            subjectCode: attempt.subjectCode || questMetadata?.subjectCode || questMetadata?.subject_id,
+            difficulty: attempt.difficulty || questMetadata?.difficulty || 1
+          };
+        });
+
+        setRecentAttempts(enriched);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
       } finally {
@@ -80,21 +99,64 @@ const Dashboard = () => {
             </div>
           </section>
 
-          {/* 3. Quick Navigation */}
+          {/* 3. Recent Activity */}
           <section className="slide-up delay-200">
-             <h3 style={{ margin: '0 0 24px 0', fontSize: '1.6rem', letterSpacing: '0.5px', textTransform: 'uppercase', color: '#CBD5E1' }}>Quick Access</h3>
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h3 style={{ margin: 0, fontSize: '1.6rem', letterSpacing: '0.5px', textTransform: 'uppercase', color: '#CBD5E1' }}>Recent Intelligence Activity</h3>
+                <Link to="/quest/completed" className="btn-link" style={{ fontSize: '0.9rem', color: '#6366F1', textDecoration: 'none', fontWeight: 700 }}>Full History <ArrowRight size={14} /></Link>
+             </div>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {recentAttempts.length === 0 ? (
+                  <div style={{ padding: '32px', background: 'rgba(0,0,0,0.2)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.05)', textAlign: 'center', color: '#475569' }}>
+                    No recent activities recorded. Start a mission to generate data.
+                  </div>
+                ) : (
+                  recentAttempts.map((attempt, i) => (
+                    <Link 
+                      key={attempt.id} 
+                      to={`/quest/${attempt.questId}`}
+                      className="premium-card slide-up" 
+                      style={{ 
+                        padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '20px', animationDelay: `${(i+1)*50}ms`, 
+                        textDecoration: 'none', background: 'rgba(10, 13, 20, 0.6)', border: '1px solid rgba(255,255,255,0.03)'
+                      }}
+                    >
+                      <div style={{ 
+                        width: '40px', height: '40px', borderRadius: '10px', 
+                        background: attempt.isCorrect ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: attempt.isCorrect ? '#10B981' : '#EF4444'
+                      }}>
+                        {attempt.isCorrect ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '1rem', fontWeight: 700, color: '#E2E8F0' }}>{attempt.questTitle || 'Mission Data Analysis'}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{new Date(attempt.completedAtUtc).toLocaleDateString()} • {attempt.isCorrect ? 'Success' : 'Failed'}</div>
+                      </div>
+                      <div style={{ color: attempt.isCorrect ? '#F59E0B' : '#475569', fontWeight: 800, fontSize: '0.9rem' }}>
+                        {attempt.isCorrect ? `+${attempt.awardedXp} XP` : '0 XP'}
+                      </div>
+                    </Link>
+                  ))
+                )}
+             </div>
+          </section>
+
+          {/* 4. Quick Navigation */}
+          <section className="slide-up delay-300">
+             <h3 style={{ margin: '32px 0 24px 0', fontSize: '1.6rem', letterSpacing: '0.5px', textTransform: 'uppercase', color: '#CBD5E1' }}>Systems Access</h3>
              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                 <Link to="/quest" className="premium-card" style={{ padding: '32px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                   <Layout size={32} color="#6366F1" />
-                  <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>Quest Archive</span>
+                  <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>Today's Tasks</span>
+                </Link>
+                <Link to="/quest/completed" className="premium-card" style={{ padding: '32px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                  <Archive size={32} color="#10B981" />
+                  <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>Mission Archive</span>
                 </Link>
                 <Link to="/leaderboards" className="premium-card" style={{ padding: '32px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                   <Trophy size={32} color="#F59E0B" />
-                  <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>Leaderboards</span>
-                </Link>
-                <Link to="/pricing" className="premium-card" style={{ padding: '32px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-                  <Star size={32} color="#10B981" />
-                  <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>Upgrade Pro</span>
+                  <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>Global Ranks</span>
                 </Link>
              </div>
           </section>

@@ -28,13 +28,13 @@ const Quest = () => {
     const fetchData = async () => {
       try {
         const [qRes, sRes] = await Promise.all([
-          api.get('/QuestsFeed/all', { params: { limit: 100 } }),
+          api.get('/QuestsFeed/today'),
           api.get('/Subjects')
         ]);
-        
-        const qList = Array.isArray(qRes.data) ? qRes.data : (qRes.data?.items || []);
+
+        const qList = qRes.data?.items || [];
         const sList = sRes.data?.subjects || sRes.data?.items || sRes.data || [];
-        
+
         setQuests(qList);
         setSubjects(sList);
       } catch (err) {
@@ -46,17 +46,42 @@ const Quest = () => {
     fetchData();
   }, []);
 
-  const getSubjectName = (subjectId) => {
-    const s = subjects.find(sub => sub.id === subjectId);
-    return s ? s.name : 'General';
+  const getSubjectName = (sid) => {
+    if (!sid) return 'General Analysis';
+    const s = subjects.find(sub => 
+      (sub.id && sub.id.toString().toLowerCase() === sid.toString().toLowerCase()) || 
+      (sub.code && sub.code.toString().toLowerCase() === sid.toString().toLowerCase())
+    );
+    return s ? s.name : 'General Analysis';
   };
 
+  const isQuestCompleted = (q) => (
+    q.isCompletedToday === true ||
+    q.isCompleted === true ||
+    q.isCompletedEver === true ||
+    q.alreadyCompletedEver === true ||
+    q.already_completed_ever === true ||
+    q.isSolved === true ||
+    q.is_solved === true ||
+    q.is_completed === true ||
+    (q.completedDateUtc !== undefined && q.completedDateUtc !== null) ||
+    (q.completed_date_utc !== undefined && q.completed_date_utc !== null) ||
+    (q.userSelectedOptionIndex !== undefined && q.userSelectedOptionIndex !== null) ||
+    (q.userAnswerIndex !== undefined && q.userAnswerIndex !== null) ||
+    (q.selectedOptionIndex !== undefined && q.selectedOptionIndex !== null) ||
+    (q.user_selected_option_index !== undefined && q.user_selected_option_index !== null) ||
+    (q.user_answer_index !== undefined && q.user_answer_index !== null) ||
+    (q.selected_option_index !== undefined && q.selected_option_index !== null)
+  );
+
+  const activeQuests = quests.filter(q => !isQuestCompleted(q));
+
   const filteredQuests = selectedSubjectId === 'all'
-    ? quests
-    : quests.filter(q => {
-        const sid = q.subject_id || q.subjectId;
-        return sid === selectedSubjectId;
-      });
+    ? activeQuests
+    : activeQuests.filter(q => {
+      const sid = (q.subjectCode || q.subjectcode || q.subject_id || q.subjectId || '').toString().toLowerCase();
+      return sid === selectedSubjectId.toLowerCase();
+    });
 
   if (loading) return (
     <div className="flex-center fade-in" style={{ minHeight: '60vh', flexDirection: 'column', gap: '20px' }}>
@@ -131,9 +156,18 @@ const Quest = () => {
           <p style={{ color: '#64748B', margin: 0, fontSize: '1.05rem' }}>Access prioritized training data and earn XP rewards.</p>
         </div>
 
-        <div style={{ textAlign: 'right', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', padding: '14px 24px', borderRadius: '16px' }}>
-          <div style={{ color: '#10B981', fontSize: '1.8rem', fontWeight: 800, lineHeight: 1 }}>{completed}/{quests.length}</div>
-          <div style={{ color: '#64748B', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px' }}>Status: Ready</div>
+        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end' }}>
+          <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', padding: '14px 24px', borderRadius: '16px' }}>
+            <div style={{ color: '#10B981', fontSize: '1.8rem', fontWeight: 800, lineHeight: 1 }}>{quests.length - activeQuests.length}/{quests.length}</div>
+            <div style={{ color: '#64748B', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px' }}>Daily Progress</div>
+          </div>
+          <button 
+            className="btn btn-outline" 
+            onClick={() => navigate('/quest/completed')}
+            style={{ padding: '8px 16px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px', borderColor: 'rgba(99,102,241,0.3)', color: '#818CF8' }}
+          >
+            <CheckCircle size={14} /> View Archived
+          </button>
         </div>
       </div>
 
@@ -168,7 +202,14 @@ const Quest = () => {
       {filteredQuests.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px', background: 'rgba(0,0,0,0.2)', borderRadius: '24px', border: '1px dashed rgba(255,255,255,0.05)' }}>
           <Disc size={48} color="#334155" style={{ marginBottom: '16px', opacity: 0.3 }} />
-          <h3 style={{ color: '#94A3B8', margin: 0 }}>No modules found in this discipline.</h3>
+          <h3 style={{ color: '#94A3B8', margin: 0 }}>All daily modules cleared or none available.</h3>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => navigate('/quest/completed')}
+            style={{ marginTop: '20px' }}
+          >
+            Review Archived Modules
+          </button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -200,7 +241,7 @@ const Quest = () => {
                   );
 
                   const d = diffMap[q.difficulty] || diffMap[1];
-                  const subjectName = getSubjectName(q.subject_id || q.subjectId);
+                  const subjectName = getSubjectName(q.subject_id || q.subjectId || q.subjectCode || q.subjectcode);
 
                   return (
                     <>
@@ -230,7 +271,7 @@ const Quest = () => {
                           ) : (
                             <>
                               <div style={{ background: d.bg, color: d.color, fontSize: '0.7rem', fontWeight: 800, padding: '3px 12px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', border: `1px solid ${d.color}22` }}>{d.label}</div>
-                              <div style={{ color: '#F59E0B', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '0.5px' }}>+{q.baseXp || q.xpReward || 0} XP</div>
+                              <div style={{ color: '#F59E0B', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '0.5px' }}>+{q.awardedXp || q.xpReward || q.baseXp || q.xp_reward || q.awarded_xp || 0} XP</div>
                             </>
                           )}
                         </div>
