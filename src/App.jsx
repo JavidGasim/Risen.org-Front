@@ -21,6 +21,7 @@ import AdminSubjects from './pages/admin/AdminSubjects';
 import AdminQuests from './pages/admin/AdminQuests';
 import AdminPlans from './pages/admin/AdminPlans';
 import AdminLeagues from './pages/admin/AdminLeagues';
+import AdminSettings from './pages/admin/AdminSettings';
 import { useAuth } from './context/AuthContext';
 
 function App() {
@@ -60,7 +61,7 @@ function App() {
             <Route path="quests" element={<AdminQuests />} />
             <Route path="plans" element={<AdminPlans />} />
             <Route path="leagues" element={<AdminLeagues />} />
-            <Route path="settings" element={<div style={{color:'white', padding: '40px'}}>Settings Coming Soon</div>} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />

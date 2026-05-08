@@ -13,16 +13,19 @@ const Profile = () => {
   const [profileData, setProfileData] = useState({
     firstName: '',
     lastName: '',
+    email: '',
     universityId: '',
     universityName: ''
   });
   
   // Password State
   const [passwords, setPasswords] = useState({
-    currentPassword: '',
+    token: '',
     newPassword: '',
     confirmPassword: ''
   });
+
+  const [resetStep, setResetStep] = useState(1); // 1: Request, 2: Reset
 
   // UI State
   const [loading, setLoading] = useState(false);
@@ -39,6 +42,7 @@ const Profile = () => {
       setProfileData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
+        email: user.email || '',
         universityId: user.universityId || '',
         universityName: user.universityName || ''
       });
@@ -82,6 +86,7 @@ const Profile = () => {
       await api.put('/Me', {
         firstName: profileData.firstName,
         lastName: profileData.lastName,
+        email: profileData.email,
         universityId: profileData.universityId || null,
         universityName: profileData.universityName
       });
@@ -98,7 +103,24 @@ const Profile = () => {
     }
   };
 
-  const handlePasswordChange = async (e) => {
+  const handleRequestToken = async () => {
+    setPassLoading(true);
+    setMessage({ type: '', text: '' });
+    try {
+      await api.post('/Auth/forgot-password', { email: profileData.email });
+      setMessage({ type: 'success', text: 'Reset token sent to your email!' });
+      setResetStep(2);
+    } catch (err) {
+      setMessage({ 
+        type: 'error', 
+        text: err.response?.data?.message || 'Failed to request reset token.' 
+      });
+    } finally {
+      setPassLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e) => {
     e.preventDefault();
     if (passwords.newPassword !== passwords.confirmPassword) {
       setMessage({ type: 'error', text: 'New passwords do not match.' });
@@ -109,18 +131,19 @@ const Profile = () => {
     setMessage({ type: '', text: '' });
     
     try {
-      // Assuming endpoint is /Auth/change-password based on standard patterns
-      await api.post('/Auth/change-password', {
-        currentPassword: passwords.currentPassword,
+      await api.post('/Auth/reset-password', {
+        email: profileData.email,
+        token: passwords.token,
         newPassword: passwords.newPassword
       });
       
-      setMessage({ type: 'success', text: 'Password changed successfully!' });
-      setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setMessage({ type: 'success', text: 'Password reset successfully!' });
+      setPasswords({ token: '', newPassword: '', confirmPassword: '' });
+      setResetStep(1);
     } catch (err) {
       setMessage({ 
         type: 'error', 
-        text: err.response?.data?.message || 'Failed to change password. Please verify your current password.' 
+        text: err.response?.data?.message || 'Failed to reset password.' 
       });
     } finally {
       setPassLoading(false);
@@ -185,13 +208,13 @@ const Profile = () => {
               <div style={{ position: 'relative' }}>
                 <input 
                   type="email" className="form-control" 
-                  value={user?.email || ''} 
-                  disabled 
-                  style={{ background: 'rgba(255,255,255,0.02)', cursor: 'not-allowed', color: '#64748B' }}
+                  value={profileData.email} 
+                  onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                  required
                 />
                 <Mail size={16} color="#475569" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' }} />
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#475569', marginTop: '6px', display: 'block' }}>Email address cannot be changed.</span>
+              <span style={{ fontSize: '0.75rem', color: '#475569', marginTop: '6px', display: 'block' }}>Note: Changing your email will update your login credentials.</span>
             </div>
 
             <div className="form-group" style={{ marginBottom: '32px' }}>
@@ -255,46 +278,80 @@ const Profile = () => {
             <h2 style={{ margin: 0, fontSize: '1.4rem' }}>Security & Password</h2>
           </div>
 
-          <form onSubmit={handlePasswordChange}>
-            <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label className="form-label">Current Password</label>
-              <div style={{ position: 'relative' }}>
-                <input 
-                  type="password" className="form-control" 
-                  value={passwords.currentPassword}
-                  onChange={(e) => setPasswords({...passwords, currentPassword: e.target.value})}
-                  required
-                />
-                <Key size={16} color="#475569" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+          {resetStep === 1 ? (
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <p style={{ color: '#94A3B8', fontSize: '0.9rem', marginBottom: '24px', lineHeight: 1.5 }}>
+                To change your password, you must first request a reset token which will be sent to <strong>{profileData.email}</strong>.
+              </p>
+              <button 
+                onClick={handleRequestToken} 
+                className="btn btn-primary" 
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                disabled={passLoading}
+              >
+                {passLoading ? <Loader2 size={18} className="animate-spin" /> : <Key size={18} />}
+                Request Reset Token
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handlePasswordReset}>
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label className="form-label">Reset Token (from Email)</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text" className="form-control" 
+                    placeholder="Enter token from email"
+                    value={passwords.token}
+                    onChange={(e) => setPasswords({...passwords, token: e.target.value})}
+                    required
+                  />
+                  <Key size={16} color="#475569" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+                </div>
               </div>
-            </div>
 
-            <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label className="form-label">New Password</label>
-              <input 
-                type="password" className="form-control" 
-                value={passwords.newPassword}
-                onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})}
-                required
-                minLength={8}
-              />
-            </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                <div className="form-group">
+                  <label className="form-label">New Password</label>
+                  <input 
+                    type="password" className="form-control" 
+                    value={passwords.newPassword}
+                    onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})}
+                    required
+                    minLength={8}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Confirm New Password</label>
+                  <input 
+                    type="password" className="form-control" 
+                    value={passwords.confirmPassword}
+                    onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
 
-            <div className="form-group" style={{ marginBottom: '32px' }}>
-              <label className="form-label">Confirm New Password</label>
-              <input 
-                type="password" className="form-control" 
-                value={passwords.confirmPassword}
-                onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})}
-                required
-              />
-            </div>
-
-            <button type="submit" className="btn btn-outline" style={{ width: '100%', borderColor: 'rgba(245, 158, 11, 0.3)', color: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} disabled={passLoading}>
-              {passLoading ? <Loader2 size={18} className="animate-spin" /> : <Key size={18} />}
-              Update Password
-            </button>
-          </form>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setResetStep(1)} 
+                  className="btn btn-outline" 
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} 
+                  disabled={passLoading}
+                >
+                  {passLoading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                  Reset Password
+                </button>
+              </div>
+            </form>
+          )}
 
           <div style={{ marginTop: '32px', padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
             <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#F1F5F9' }}>Two-Factor Authentication</h4>

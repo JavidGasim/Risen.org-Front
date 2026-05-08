@@ -23,6 +23,7 @@ const CompletedQuests = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all'); // all, success, failed
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,8 +38,13 @@ const CompletedQuests = () => {
         const allQuests = Array.isArray(allRes.data) ? allRes.data : (allRes.data?.items || []);
         const sList = sRes.data?.subjects || sRes.data?.items || sRes.data || [];
 
+        const filteredAttempts = attempts.filter(attempt => attempt.userId === user.id);
+
+        console.log("A: ", filteredAttempts);
+
+
         // Enrich attempts with metadata from the allQuests feed (which contains SubjectCode, Difficulty, etc.)
-        const enrichedAttempts = attempts.map(attempt => {
+        const enrichedAttempts = filteredAttempts.map(attempt => {
           const questMetadata = allQuests.find(aq => aq.id === attempt.questId);
           return {
             ...attempt,
@@ -48,6 +54,8 @@ const CompletedQuests = () => {
             questTitle: attempt.questTitle || questMetadata?.title || questMetadata?.questionText
           };
         });
+
+        console.log("B: ", enrichedAttempts);
 
         setQuests(enrichedAttempts);
         setSubjects(sList);
@@ -62,8 +70,8 @@ const CompletedQuests = () => {
 
   const getSubjectName = (sid) => {
     if (!sid) return 'General Analysis';
-    const s = subjects.find(sub => 
-      (sub.id && sub.id.toString().toLowerCase() === sid.toString().toLowerCase()) || 
+    const s = subjects.find(sub =>
+      (sub.id && sub.id.toString().toLowerCase() === sid.toString().toLowerCase()) ||
       (sub.code && sub.code.toString().toLowerCase() === sid.toString().toLowerCase())
     );
     return s ? s.name : 'General Analysis';
@@ -71,12 +79,17 @@ const CompletedQuests = () => {
 
   // No need for manual filtering if we use QuestAttempts endpoint, 
   // as it returns the user's mission history directly.
-  const filteredQuests = selectedSubjectId === 'all'
-    ? quests
-    : quests.filter(q => {
-      const sid = (q.subjectCode || q.subjectcode || q.subject_id || q.subjectId || '').toString().toLowerCase();
-      return sid === selectedSubjectId.toLowerCase();
-    });
+  const filteredQuests = quests.filter(q => {
+    const matchesSubject = selectedSubjectId === 'all' || 
+      (q.subjectCode || q.subjectcode || q.subject_id || q.subjectId || '').toString().toLowerCase() === selectedSubjectId.toLowerCase();
+    
+    const isCorrect = q.isCorrect ?? q.is_correct ?? (q.isSolved || q.is_solved);
+    const matchesStatus = selectedStatus === 'all' || 
+      (selectedStatus === 'success' && isCorrect) || 
+      (selectedStatus === 'failed' && !isCorrect);
+
+    return matchesSubject && matchesStatus;
+  });
 
   if (loading) return (
     <div className="flex-center fade-in" style={{ minHeight: '60vh', flexDirection: 'column', gap: '20px' }}>
@@ -142,8 +155,8 @@ const CompletedQuests = () => {
       {/* Header & Stats */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div>
-          <button 
-            className="btn-link" 
+          <button
+            className="btn-link"
             onClick={() => navigate('/quest')}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', textDecoration: 'none', fontWeight: 600, marginBottom: '16px', background: 'none', border: 'none', cursor: 'pointer' }}
           >
@@ -156,9 +169,15 @@ const CompletedQuests = () => {
           <p style={{ color: '#64748B', margin: 0, fontSize: '1.05rem' }}>Review your past achievements and data analysis history.</p>
         </div>
 
-        <div style={{ textAlign: 'right', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', padding: '14px 24px', borderRadius: '16px' }}>
-          <div style={{ color: '#818CF8', fontSize: '1.8rem', fontWeight: 800, lineHeight: 1 }}>{quests.length}</div>
-          <div style={{ color: '#64748B', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px' }}>Total Attempts</div>
+        <div style={{ textAlign: 'right', display: 'flex', gap: '12px' }}>
+          <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '10px 20px', borderRadius: '16px', textAlign: 'center' }}>
+            <div style={{ color: '#10B981', fontSize: '1.4rem', fontWeight: 800, lineHeight: 1 }}>{quests.filter(q => q.isCorrect ?? q.is_correct ?? q.isSolved).length}</div>
+            <div style={{ color: '#64748B', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>Solved</div>
+          </div>
+          <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', padding: '10px 20px', borderRadius: '16px', textAlign: 'center' }}>
+            <div style={{ color: '#818CF8', fontSize: '1.4rem', fontWeight: 800, lineHeight: 1 }}>{quests.length}</div>
+            <div style={{ color: '#64748B', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>Attempts</div>
+          </div>
         </div>
       </div>
 
@@ -172,7 +191,7 @@ const CompletedQuests = () => {
             className={`filter-btn ${selectedSubjectId === 'all' ? 'active' : ''}`}
             onClick={() => setSelectedSubjectId('all')}
           >
-            <Layers size={14} /> All History
+            <Layers size={14} /> All Disciplines
           </button>
           {subjects.map(sub => {
             const subjectKey = sub.code || sub.id;
@@ -186,6 +205,41 @@ const CompletedQuests = () => {
               </button>
             );
           })}
+        </div>
+
+        {/* Status Filter */}
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+          <button
+            className={`filter-btn ${selectedStatus === 'all' ? 'active' : ''}`}
+            onClick={() => setSelectedStatus('all')}
+            style={{ padding: '6px 14px', fontSize: '0.75rem' }}
+          >
+            All Status
+          </button>
+          <button
+            className={`filter-btn ${selectedStatus === 'success' ? 'active' : ''}`}
+            onClick={() => setSelectedStatus('success')}
+            style={{ 
+              padding: '6px 14px', fontSize: '0.75rem',
+              borderColor: selectedStatus === 'success' ? '#10B981' : 'rgba(16,185,129,0.1)',
+              background: selectedStatus === 'success' ? '#10B981' : 'rgba(16,185,129,0.05)',
+              boxShadow: selectedStatus === 'success' ? '0 0 15px rgba(16,185,129,0.3)' : 'none'
+            }}
+          >
+            <CheckCircle size={12} /> Success
+          </button>
+          <button
+            className={`filter-btn ${selectedStatus === 'failed' ? 'active' : ''}`}
+            onClick={() => setSelectedStatus('failed')}
+            style={{ 
+              padding: '6px 14px', fontSize: '0.75rem',
+              borderColor: selectedStatus === 'failed' ? '#EF4444' : 'rgba(239,68,68,0.1)',
+              background: selectedStatus === 'failed' ? '#EF4444' : 'rgba(239,68,68,0.05)',
+              boxShadow: selectedStatus === 'failed' ? '0 0 15px rgba(239,68,68,0.3)' : 'none'
+            }}
+          >
+            <AlertTriangle size={12} /> Failed
+          </button>
         </div>
       </div>
 
@@ -210,13 +264,13 @@ const CompletedQuests = () => {
                 style={{ background: 'rgba(10,13,20,0.85)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '24px 32px', display: 'flex', alignItems: 'center', gap: '24px', animationDelay: `${i * 30}ms`, cursor: 'pointer' }}
                 onClick={() => navigate(`/quest/${q.questId || q.id}`)}>
 
-                <div style={{ 
-                  width: '48px', height: '48px', borderRadius: '14px', 
-                  background: isCorrect ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)', 
-                  border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}`, 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  color: isCorrect ? '#10B981' : '#EF4444', 
-                  fontWeight: 900, fontSize: '1.1rem', flexShrink: 0 
+                <div style={{
+                  width: '48px', height: '48px', borderRadius: '14px',
+                  background: isCorrect ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)',
+                  border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: isCorrect ? '#10B981' : '#EF4444',
+                  fontWeight: 900, fontSize: '1.1rem', flexShrink: 0
                 }}>
                   {isCorrect ? <CheckCircle size={20} /> : <AlertTriangle size={20} />}
                 </div>
