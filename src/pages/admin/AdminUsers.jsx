@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Shield, ShieldOff, MoreVertical } from 'lucide-react';
+import { Search, Shield, ShieldOff, MoreVertical, Trophy, Star, Activity, TrendingUp } from 'lucide-react';
 import api from '../../utils/api';
 
 export default function AdminUsers() {
@@ -33,6 +33,7 @@ export default function AdminUsers() {
           headers: { 'Content-Type': 'application/json' }
         });
       }
+      setUsers(users.map(u => u.id === userId ? { ...u, isAdmin: !currentIsAdmin } : u));
       alert(`Role toggled successfully for user!`);
     } catch (e) {
       console.error("Error toggling role", e);
@@ -40,7 +41,7 @@ export default function AdminUsers() {
     }
   };
 
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -54,7 +55,7 @@ export default function AdminUsers() {
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.6)' }}>Browse and manage all registered platform users.</p>
         </div>
-        
+
         <div style={{ position: 'relative', width: '300px' }}>
           <Search size={18} color="rgba(255,255,255,0.4)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
           <input
@@ -85,7 +86,8 @@ export default function AdminUsers() {
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>
                   <th style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>User</th>
                   <th style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>Email</th>
-                  <th style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>University ID</th>
+                  <th style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>League</th>
+                  <th style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>Stats</th>
                   <th style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontWeight: '500', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -110,34 +112,60 @@ export default function AdminUsers() {
                         </div>
                       </td>
                       <td style={{ padding: '16px', color: 'rgba(255,255,255,0.8)' }}>{user.email}</td>
-                      <td style={{ padding: '16px', color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>
-                        {user.universityId ? user.universityId.substring(0, 8) + '...' : 'None'}
+                      <td style={{ padding: '16px', color: 'rgba(255,255,255,0.8)' }}>
+                        {user.isAdmin ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Shield size={16} color="#3B82F6" />
+                            <span style={{ fontWeight: '500', color: '#3B82F6' }}>Admin</span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Trophy size={16} color="#A855F7" />
+                            <span style={{ fontWeight: '500' }}>{user.stats?.currentLeague || user.stats?.current_league || 'Rookie'}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: '16px', color: 'rgba(255,255,255,0.8)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#F59E0B' }} title="Total XP">
+                            <Star size={14} /> {user.stats?.totalXp ?? user.stats?.total_xp ?? 0}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10B981' }} title="Streak">
+                            <Activity size={14} /> {user.stats?.currentStreak ?? user.stats?.current_streak ?? 0}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#3B82F6' }} title="Risen Score">
+                            <TrendingUp size={14} /> {user.stats?.risenScore ?? user.stats?.risen_score ?? 0}
+                          </div>
+                        </div>
                       </td>
                       <td style={{ padding: '16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                          <button
-                            onClick={() => handleToggleAdmin(user.id, false)}
-                            className="btn btn-primary"
-                            style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
-                            title="Make Admin"
-                          >
-                            <Shield size={14} /> Promote
-                          </button>
-                          <button
-                            onClick={() => handleToggleAdmin(user.id, true)}
-                            className="btn btn-secondary"
-                            style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
-                            title="Remove Admin"
-                          >
-                            <ShieldOff size={14} /> Demote
-                          </button>
+                          {!user.isAdmin ? (
+                            <button
+                              onClick={() => handleToggleAdmin(user.id, false)}
+                              className="btn btn-primary"
+                              style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
+                              title="Make Admin"
+                            >
+                              <Shield size={14} /> Promote
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleToggleAdmin(user.id, true)}
+                              className="btn btn-secondary"
+                              style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
+                              title="Remove Admin"
+                            >
+                              <ShieldOff size={14} /> Demote
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.6)' }}>
+                    <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.6)' }}>
                       No users match your search.
                     </td>
                   </tr>
