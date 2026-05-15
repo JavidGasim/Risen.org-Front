@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import api from '../utils/api';
 import { Activity, Star, Trophy, ShieldAlert, ArrowRight, Target, Zap, Layout, Archive, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const Dashboard = () => {

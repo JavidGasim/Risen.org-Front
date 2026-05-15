@@ -1,43 +1,88 @@
 import { useState, useEffect } from 'react';
 import { Search, Shield, ShieldOff, MoreVertical, Trophy, Star, Activity, TrendingUp } from 'lucide-react';
 import api from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const { signalRConnection } = useAuth();
 
   const fetchUsers = async () => {
+
     setLoading(true);
+
     try {
+
       const { data } = await api.get('/admin/users?limit=50');
-      // The backend returns { Id, FullName, Email, UniversityId }
+
       setUsers(data);
+
     } catch (error) {
-      console.error("Failed to fetch users", error);
+
+      console.error(error);
+
     } finally {
+
       setLoading(false);
     }
   };
 
   useEffect(() => {
+
     fetchUsers();
+
   }, []);
 
+  useEffect(() => {
+    if (!signalRConnection) return;
+
+    const handler = () => {
+      console.log("Role updated realtime - refreshing list");
+      fetchUsers();
+    };
+
+    signalRConnection.on("RoleUpdated", handler);
+
+    return () => {
+      signalRConnection.off("RoleUpdated", handler);
+    };
+  }, [signalRConnection]);
+
   const handleToggleAdmin = async (userId, currentIsAdmin) => {
+
     try {
+
       if (currentIsAdmin) {
+
         await api.delete(`/admin/users/${userId}/roles/Admin`);
+
       } else {
-        await api.post(`/admin/users/${userId}/roles`, JSON.stringify("Admin"), {
-          headers: { 'Content-Type': 'application/json' }
-        });
+
+        await api.post(
+          `/admin/users/${userId}/roles`,
+          JSON.stringify("Admin"),
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
       }
-      setUsers(users.map(u => u.id === userId ? { ...u, isAdmin: !currentIsAdmin } : u));
-      alert(`Role toggled successfully for user!`);
+
+      // realtime update ucun optional optimistic update
+      setUsers(prev =>
+        prev.map(u =>
+          u.id === userId
+            ? { ...u, isAdmin: !currentIsAdmin }
+            : u
+        )
+      );
+
     } catch (e) {
-      console.error("Error toggling role", e);
-      alert("Failed to toggle role.");
+
+      console.error(e);
     }
   };
 

@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import api from '../utils/api';
 import { setCookie, getCookie, deleteCookie } from '../utils/cookie';
+import * as signalR from '@microsoft/signalr';
 
 const AuthContext = createContext();
 
@@ -10,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [signalRConnection, setSignalRConnection] = useState(null);
 
   const checkAdminRole = (token) => {
     if (!token || typeof token !== 'string') return false;
@@ -37,14 +39,14 @@ export const AuthProvider = ({ children }) => {
           const { data } = await api.get('/Me');
           const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
           setUser(data);
-          
+
           const combinedStats = { ...(data.stats || data) };
           if (rankData) {
             combinedStats.globalRank = rankData.rank || rankData;
             if (rankData.rank) combinedStats.rank = rankData.rank;
           }
           setStats(combinedStats);
-          
+
           setIsAuthenticated(true);
           setIsAdmin(checkAdminRole(token));
         } catch (error) {
@@ -65,6 +67,50 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const baseUrl = import.meta.env.VITE_API_URL
+      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
+      : 'https://localhost:7053';
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${baseUrl}/notificationHub`, {
+        accessTokenFactory: () => getCookie('risen_token')
+      })
+      .withAutomaticReconnect()
+      .build();
+
+    connection.start()
+      .then(() => {
+        console.log("SignalR Connected globally");
+        setSignalRConnection(connection);
+      })
+      .catch(console.error);
+
+    return () => {
+      connection.stop();
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (signalRConnection && user) {
+      const handleRoleUpdated = (userId) => {
+        // If the backend says my role was updated, reload to get new access token/state
+        if (user.id === userId) {
+          console.log("My role changed! Reloading to update permissions...");
+          window.location.reload();
+        }
+      };
+
+      signalRConnection.on("RoleUpdated", handleRoleUpdated);
+
+      return () => {
+        signalRConnection.off("RoleUpdated", handleRoleUpdated);
+      };
+    }
+  }, [signalRConnection, user]);
+
   const login = async (email, password) => {
     const { data } = await api.post('/Auth/login', { Email: email, Password: password });
 
@@ -84,7 +130,7 @@ export const AuthProvider = ({ children }) => {
       const { data: meData } = await api.get('/Me');
       const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
       setUser(meData);
-      
+
       const combinedStats = { ...(meData.stats || meData) };
       if (rankData) {
         combinedStats.globalRank = rankData.rank || rankData;
@@ -128,7 +174,7 @@ export const AuthProvider = ({ children }) => {
       const { data: meData } = await api.get('/Me');
       const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
       setUser(meData);
-      
+
       const combinedStats = { ...(meData.stats || meData) };
       if (rankData) {
         combinedStats.globalRank = rankData.rank || rankData;
@@ -180,7 +226,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await api.get('/Me');
       const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
-      
+
       const combinedStats = { ...(data.stats || data) };
       if (rankData) {
         combinedStats.globalRank = rankData.rank || rankData;
@@ -194,7 +240,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, stats, isAuthenticated, isAdmin, login, register, verifyRegister, logout, forgotPassword, resetPassword, refreshStats, loading, checkAdminRole }}>
+    <AuthContext.Provider value={{ user, stats, isAuthenticated, isAdmin, login, register, verifyRegister, logout, forgotPassword, resetPassword, refreshStats, loading, checkAdminRole, signalRConnection }}>
       {!loading && children}
     </AuthContext.Provider>
   );
