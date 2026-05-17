@@ -14,7 +14,7 @@ const Dashboard = () => {
       try {
         const [statsRes, attemptsRes, allRes] = await Promise.all([
           refreshStats(),
-          api.get('/QuestAttempts', { params: { limit: 5 } }).catch(() => ({ data: [] })),
+          api.get('/Quest-attempts', { params: { limit: 5 } }).catch(() => ({ data: [] })),
           api.get('/QuestsFeed/all').catch(() => ({ data: [] }))
         ]);
 
