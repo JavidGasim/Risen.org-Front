@@ -89,7 +89,7 @@ const QuestDetail = () => {
 
 
   useEffect(() => {
-    if (quest && isCompleted) {
+    if (quest && isCompleted && !result) {
       // If user had a previous selection, show it
       const prevSelection = quest.userSelectedOptionIndex ?? quest.userAnswerIndex ?? quest.selectedOptionIndex;
       if (prevSelection !== undefined && prevSelection !== null) {
@@ -97,8 +97,9 @@ const QuestDetail = () => {
       }
 
       // If we have completion data, show the result immediately
-      const correctIdxValue = quest.correctOptionIndex ?? quest.correctIndex;
-      const isCorrectValue = quest.isCorrect ?? quest.is_correct ?? (prevSelection !== undefined && prevSelection === correctIdxValue);
+      const correctIdxValue = quest.correctOptionIndex ?? quest.correctIndex ?? quest.CorrectIndex;
+      const explicitIsCorrect = quest.isCorrect ?? quest.is_correct ?? quest.IsCorrect ?? quest.isSolved ?? quest.IsSolved;
+      const isCorrectValue = explicitIsCorrect ?? (prevSelection !== undefined && prevSelection === correctIdxValue);
 
       // If we have completion data, show the result immediately
 
@@ -134,14 +135,14 @@ const QuestDetail = () => {
 
       // Normalize response for the UI
       setResult({
-        isCorrect: data.isCorrect ?? data.is_correct,
-        correctIndex: data.correctIndex ?? data.correct_index,
-        xpEarned: data.awardedXp ?? data.xp_reward ?? data.awarded_xp,
-        explanation: data.explanation || data.analysisReport || quest.explanation || quest.analysisReport,
+        isCorrect: data.isCorrect ?? data.is_correct ?? data.IsCorrect ?? data.isSolved ?? data.IsSolved ?? true, // Fallback to true if we don't have it explicitly false but it succeeded
+        correctIndex: data.correctIndex ?? data.correct_index ?? data.CorrectIndex ?? data.correctOptionIndex,
+        xpEarned: data.awardedXp ?? data.xp_reward ?? data.awarded_xp ?? data.AwardedXp ?? data.xpReward,
+        explanation: data.explanation || data.analysisReport || data.Explanation || data.AnalysisReport || quest.explanation || quest.analysisReport,
         newStats: {
-          totalXp: data.totalXp || data.total_xp,
-          league: data.league,
-          streak: data.currentStreak || data.current_streak
+          totalXp: data.totalXp || data.total_xp || data.TotalXp,
+          league: data.league || data.League,
+          streak: data.currentStreak || data.current_streak || data.CurrentStreak
         }
       });
 
@@ -194,8 +195,8 @@ const QuestDetail = () => {
   }
 
   const isCorrect = result 
-    ? (result.isCorrect ?? result.is_correct) 
-    : (quest?.isCorrect ?? quest?.is_correct ?? (quest?.isSolved || quest?.is_solved));
+    ? (result.isCorrect ?? result.is_correct ?? result.IsCorrect) 
+    : (quest?.isCorrect ?? quest?.is_correct ?? quest?.IsCorrect ?? (quest?.isSolved || quest?.is_solved));
   const options = quest.options || [];
   const subjectName = getSubjectName(quest.subject_id || quest.subjectId || quest.subjectCode || quest.subjectcode);
 

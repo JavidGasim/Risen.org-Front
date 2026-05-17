@@ -48,6 +48,7 @@ const CompletedQuests = () => {
           const questMetadata = allQuests.find(aq => aq.id === attempt.questId);
           return {
             ...attempt,
+            isCorrect: attempt.isCorrect ?? attempt.is_correct ?? attempt.IsCorrect ?? attempt.isSolved ?? attempt.IsSolved,
             subjectCode: attempt.subjectCode || questMetadata?.subjectCode || questMetadata?.subject_id,
             difficulty: attempt.difficulty || questMetadata?.difficulty || 1,
             // Fallback for title if needed
