@@ -87,8 +87,7 @@ const Register = () => {
         formData.lastName,
         formData.universityName
       );
-      setStep(2);
-      setResendCooldown(60);
+      navigate('/dashboard');
     } catch (err) {
       setError(
         err.response?.data?.message ||

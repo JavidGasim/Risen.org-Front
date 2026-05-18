@@ -143,7 +143,7 @@ export const AuthProvider = ({ children }) => {
     return { ...data, _isAdmin: adminStatus };
   };
 
-  // STEP 1 — OTP göndər (POST /Auth/register)
+  // Register flow (OTP temporarily disabled)
   const register = async (email, password, firstName, lastName, universityName) => {
     const payload = {
       Email: email,
@@ -153,8 +153,33 @@ export const AuthProvider = ({ children }) => {
       UniversityName: universityName
     };
     const { data } = await api.post('/Auth/register', payload);
-    // Backend sadəcə OTP göndərir — bu mərhələdə token yoxdur
-    return data;
+    
+    const returnedToken = data.token || data.accessToken || data.access;
+    let adminStatus = false;
+    if (returnedToken) {
+      adminStatus = checkAdminRole(returnedToken);
+      setCookie('risen_token', returnedToken);
+      setIsAdmin(adminStatus);
+    }
+
+    if (data.user) setUser(data.user);
+    setIsAuthenticated(true);
+
+    try {
+      const { data: meData } = await api.get('/Me');
+      const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
+      setUser(meData);
+
+      const combinedStats = { ...(meData.stats || meData) };
+      if (rankData) {
+        combinedStats.globalRank = rankData.rank || rankData;
+        if (rankData.rank) combinedStats.rank = rankData.rank;
+      }
+      setStats(combinedStats);
+    } catch (e) {
+      console.error(e);
+    }
+    return { ...data, _isAdmin: adminStatus };
   };
 
   // STEP 2 — OTP yoxla, hesab yarat (POST /Auth/verify-register)
