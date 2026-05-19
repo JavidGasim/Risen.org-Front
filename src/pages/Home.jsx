@@ -69,10 +69,25 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Sample Subjects */}
-      <section style={{ background: 'rgba(99, 102, 241, 0.03)', padding: '60px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.02)' }}>
-        <h2 style={{ textAlign: 'center', fontSize: '2.5rem', marginBottom: '40px' }}>Master the core disciplines</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      {/* Subject catalog preview */}
+      <section style={{
+        background: 'rgba(99, 102, 241, 0.03)',
+        padding: '52px',
+        borderRadius: '24px',
+        border: '1px solid rgba(255,255,255,0.04)'
+      }}>
+        <div style={{ textAlign: 'center', maxWidth: '620px', margin: '0 auto 32px auto' }}>
+          <h2 style={{ fontSize: '2.5rem', marginBottom: '12px' }}>Master the core disciplines</h2>
+          <p style={{ color: '#94A3B8', lineHeight: 1.6, margin: 0 }}>
+            Explore the active subject tracks available in Risen.
+          </p>
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '16px',
+          alignItems: 'stretch'
+        }}>
           {subjectsLoading ? (
             <div className="glass-panel" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '24px', background: 'rgba(0,0,0,0.4)', color: '#94A3B8' }}>
               Loading disciplines...
@@ -82,8 +97,20 @@ const Home = () => {
               No disciplines available yet.
             </div>
           ) : subjects.map((subject) => (
-            <div key={subject.id || subject.code || subject.name} className="glass-panel" style={{ textAlign: 'center', padding: '24px', background: 'rgba(0,0,0,0.4)' }}>
-              <h4 style={{ margin: 0, color: '#E2E8F0' }}>{subject.name}</h4>
+            <div
+              key={subject.id || subject.code || subject.name}
+              className="glass-panel"
+              style={{
+                minHeight: '96px',
+                textAlign: 'left',
+                padding: '20px',
+                background: 'rgba(0,0,0,0.34)',
+                display: 'flex',
+                alignItems: 'center',
+                borderColor: 'rgba(255,255,255,0.06)'
+              }}
+            >
+              <h4 style={{ margin: 0, color: '#E2E8F0', fontSize: '1.05rem', overflowWrap: 'anywhere' }}>{subject.name}</h4>
             </div>
           ))}
         </div>
