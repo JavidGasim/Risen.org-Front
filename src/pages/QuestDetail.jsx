@@ -378,24 +378,44 @@ const QuestDetail = () => {
                     {String.fromCharCode(65 + idx)}
                   </div>
                   <span style={{ flex: 1 }}>{opt.text || opt}</span>
-                  {showAnswerMarker && (
-                    <span style={{
-                      color: isWrongSelection ? '#FCA5A5' : isCorrectOption ? '#6EE7B7' : '#C7D2FE',
-                      background: isWrongSelection ? 'rgba(239, 68, 68, 0.12)' : isCorrectOption ? 'rgba(16, 185, 129, 0.12)' : 'rgba(99, 102, 241, 0.12)',
-                      border: `1px solid ${isWrongSelection ? 'rgba(239, 68, 68, 0.22)' : isCorrectOption ? 'rgba(16, 185, 129, 0.22)' : 'rgba(99, 102, 241, 0.22)'}`,
-                      borderRadius: '999px',
-                      padding: '5px 10px',
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      letterSpacing: '0.5px',
-                      textTransform: 'uppercase',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      Your answer
+                  {(showAnswerMarker || showCorrectMarker || isWrongSelection) && (
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
+                      {showAnswerMarker && (
+                        <span style={{
+                          color: isWrongSelection ? '#FCA5A5' : isCorrectOption ? '#6EE7B7' : '#C7D2FE',
+                          background: isWrongSelection ? 'rgba(239, 68, 68, 0.12)' : isCorrectOption ? 'rgba(16, 185, 129, 0.12)' : 'rgba(99, 102, 241, 0.12)',
+                          border: `1px solid ${isWrongSelection ? 'rgba(239, 68, 68, 0.22)' : isCorrectOption ? 'rgba(16, 185, 129, 0.22)' : 'rgba(99, 102, 241, 0.22)'}`,
+                          borderRadius: '999px',
+                          padding: '5px 10px',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Your answer
+                        </span>
+                      )}
+                      {showCorrectMarker && (
+                        <span style={{
+                          color: '#6EE7B7',
+                          background: 'rgba(16, 185, 129, 0.12)',
+                          border: '1px solid rgba(16, 185, 129, 0.22)',
+                          borderRadius: '999px',
+                          padding: '5px 10px',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Correct answer
+                        </span>
+                      )}
+                      {showCorrectMarker && <CheckCircle size={22} color="#10B981" style={{ filter: 'drop-shadow(0 0 10px rgba(16,185,129,0.4))' }} />}
+                      {(result || isCompleted) && isWrongSelection && <AlertTriangle size={22} color="#EF4444" />}
                     </span>
                   )}
-                  {showCorrectMarker && <CheckCircle size={22} color="#10B981" style={{ filter: 'drop-shadow(0 0 10px rgba(16,185,129,0.4))' }} />}
-                  {(result || isCompleted) && isWrongSelection && <AlertTriangle size={22} color="#EF4444" />}
                 </button>
               );
             })}
