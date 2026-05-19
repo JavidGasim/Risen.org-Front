@@ -64,12 +64,16 @@ const Subjects = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '30px' }}>
         {subjects.map((subject, index) => {
-          const subjectQuests = quests.filter(q => (q.subject_id || q.subjectId) === subject.id);
-          const isExpanded = expandedSubject === subject.id;
+          const subjectKey = subject.code || subject.id;
+          const subjectQuests = quests.filter(q => {
+            const qSid = (q.subjectCode || q.subjectcode || q.subject_id || q.subjectId || '').toString().toLowerCase();
+            return qSid === (subjectKey || '').toString().toLowerCase();
+          });
+          const isExpanded = expandedSubject === subjectKey;
           
           return (
             <div 
-              key={subject.id} 
+              key={subjectKey} 
               className="premium-card slide-up" 
               style={{ 
                 animationDelay: `${(index) * 80}ms`, 
@@ -82,7 +86,7 @@ const Subjects = () => {
             >
               <div 
                 style={{ padding: '32px', cursor: 'pointer', transition: 'background 0.2s' }} 
-                onClick={() => setExpandedSubject(isExpanded ? null : subject.id)}
+                onClick={() => setExpandedSubject(isExpanded ? null : subjectKey)}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
