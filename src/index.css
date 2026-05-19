@@ -272,3 +272,311 @@ a:hover {
 .tab-content {
   animation: tabEnter 0.3s ease-out forwards;
 }
+
+/* Responsive shell */
+@media (max-width: 1024px) {
+  .container {
+    max-width: 100%;
+    padding: 0 20px;
+  }
+
+  .app-main {
+    padding: 32px 20px !important;
+  }
+
+  .app-navbar {
+    padding: 16px 20px !important;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .app-navbar-left {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    gap: 20px !important;
+    min-width: 0;
+  }
+
+  .app-navbar-links {
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .app-navbar-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-navbar-actions {
+    margin-left: auto;
+  }
+
+  .admin-shell {
+    flex-direction: column !important;
+  }
+
+  .admin-sidebar {
+    width: 100% !important;
+    max-height: none;
+    padding: 18px 0 !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .admin-sidebar nav {
+    flex-direction: row !important;
+    overflow-x: auto;
+    padding: 0 16px !important;
+  }
+
+  .admin-sidebar nav a {
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  .admin-topbar {
+    padding: 14px 20px !important;
+  }
+
+  .admin-content {
+    padding: 28px 20px !important;
+  }
+
+  .admin-main {
+    overflow: visible !important;
+  }
+
+  /* Common inline grids used across pages */
+  [style*="grid-template-columns: 1fr 350px"],
+  [style*="grid-template-columns: 80px 1fr 200px 140px"],
+  [style*="grid-template-columns: repeat(4, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [style*="grid-template-columns: repeat(3, 1fr)"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  [style*="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr))"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-main {
+    padding: 24px 16px !important;
+  }
+
+  .glass-panel,
+  .premium-card {
+    border-radius: 14px;
+  }
+
+  .app-navbar {
+    align-items: stretch !important;
+  }
+
+  .app-navbar-left {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .app-navbar-brand span {
+    font-size: 1.25rem !important;
+  }
+
+  .app-navbar-links {
+    gap: 10px !important;
+  }
+
+  .app-navbar-links a {
+    flex: 0 0 auto;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .app-navbar-auth {
+    width: 100%;
+  }
+
+  .app-navbar-auth a {
+    flex: 1;
+    padding: 10px 12px !important;
+  }
+
+  .app-navbar-actions {
+    width: 100%;
+  }
+
+  .app-profile-menu {
+    left: 0 !important;
+    right: 0 !important;
+    width: min(100%, 360px) !important;
+  }
+
+  h1,
+  [style*="font-size: 3.5rem"],
+  [style*="font-size: 2.8rem"],
+  [style*="font-size: 2.5rem"] {
+    font-size: clamp(1.8rem, 8vw, 2.35rem) !important;
+    line-height: 1.12 !important;
+  }
+
+  h2,
+  [style*="font-size: 2rem"] {
+    font-size: clamp(1.45rem, 6vw, 1.9rem) !important;
+  }
+
+  [style*="font-size: 3.8rem"] {
+    font-size: clamp(2.4rem, 14vw, 3.2rem) !important;
+  }
+
+  [style*="padding: 48px"],
+  [style*="padding: 40px"],
+  [style*="padding: '40px'"] {
+    padding: 24px !important;
+  }
+
+  [style*="padding: 32px"] {
+    padding: 22px !important;
+  }
+
+  [style*="display: flex"][style*="justify-content: space-between"],
+  header[style*="display: flex"][style*="justify-content: space-between"] {
+    flex-wrap: wrap !important;
+    gap: 16px !important;
+  }
+
+  [style*="align-items: flex-end"] {
+    align-items: flex-start !important;
+  }
+
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)"],
+  [style*="grid-template-columns: repeat(2"],
+  [style*="grid-template-columns: repeat(3, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [style*="grid-template-columns: minmax(0, 1fr) auto"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [style*="minmax(340px, 1fr)"],
+  [style*="minmax(300px, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Quest/archive rows */
+  .qrow {
+    padding: 18px !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+  }
+
+  .qrow > div:nth-child(2) span {
+    white-space: normal !important;
+  }
+
+  .qrow > div:last-child {
+    width: 100%;
+    justify-content: space-between !important;
+    gap: 12px !important;
+  }
+
+  /* Leaderboard/admin tables become swipeable instead of crushed. */
+  table {
+    min-width: 680px;
+  }
+
+  .premium-card:has(table),
+  .glass-panel:has(table),
+  [style*="overflow-x: auto"] {
+    overflow-x: auto !important;
+  }
+
+  .btn {
+    min-height: 42px;
+  }
+}
+
+@media (max-width: 560px) {
+  .container {
+    padding: 0 14px;
+  }
+
+  .app-main {
+    padding: 20px 14px !important;
+  }
+
+  .app-navbar {
+    padding: 14px !important;
+  }
+
+  .app-navbar-links a {
+    font-size: 0.8rem;
+  }
+
+  .app-navbar-links a svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 11px 14px;
+  }
+
+  [style*="display: flex"][style*="gap: 16px"],
+  [style*="display: flex"][style*="gap: '16px'"] {
+    gap: 10px !important;
+  }
+
+  [style*="display: flex"][style*="justify-content: center"] {
+    flex-wrap: wrap !important;
+  }
+
+  [style*="text-align: right"] {
+    text-align: left !important;
+  }
+
+  [style*="align-items: flex-end"] {
+    align-items: stretch !important;
+  }
+
+  .qrow {
+    flex-direction: column !important;
+  }
+
+  .qrow > div:first-child {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .subject-badge {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  [style*="width: 48px"][style*="height: 56px"] {
+    width: 42px !important;
+    height: 50px !important;
+  }
+
+  .admin-sidebar h1 {
+    font-size: 20px !important;
+  }
+
+  .admin-content {
+    padding: 22px 14px !important;
+  }
+}

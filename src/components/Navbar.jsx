@@ -29,7 +29,7 @@ const Navbar = () => {
   }, []);
 
   return (
-    <nav style={{
+    <nav className="app-navbar" style={{
       padding: '20px 40px',
       background: 'rgba(5, 7, 10, 0.85)',
       backdropFilter: 'blur(12px)',
@@ -41,8 +41,8 @@ const Navbar = () => {
       top: 0,
       zIndex: 100
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+      <div className="app-navbar-left" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+        <Link className="app-navbar-brand" to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
           <ShieldAlert size={28} color="#10B981" />
           <span style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '1px', color: '#fff' }}>
             RISEN<span style={{ color: '#10B981' }}>.ORG</span>
@@ -50,7 +50,7 @@ const Navbar = () => {
         </Link>
         
         {isAuthenticated && (
-          <div style={{ display: 'flex', gap: '24px', fontSize: '0.9rem', fontWeight: 600 }}>
+          <div className="app-navbar-links" style={{ display: 'flex', gap: '24px', fontSize: '0.9rem', fontWeight: 600 }}>
             {[
               { to: '/dashboard', icon: <Compass size={18} />, label: 'Dashboard' },
               { to: '/subjects', icon: <Zap size={18} />, label: 'Subjects' },
@@ -72,9 +72,9 @@ const Navbar = () => {
         )}
       </div>
 
-      <div style={{ position: 'relative' }} ref={dropdownRef}>
+      <div className="app-navbar-actions" style={{ position: 'relative' }} ref={dropdownRef}>
         {!isAuthenticated ? (
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <div className="app-navbar-auth" style={{ display: 'flex', gap: '16px' }}>
             <Link to="/login" className="btn btn-outline" style={{ padding: '8px 20px' }}>Login</Link>
             <Link to="/register" className="btn btn-primary" style={{ padding: '8px 20px' }}>Join the League</Link>
           </div>
@@ -102,7 +102,7 @@ const Navbar = () => {
         )}
 
         {isProfileOpen && (
-          <div className="fade-in slide-up" style={{
+          <div className="fade-in slide-up app-profile-menu" style={{
             position: 'absolute', top: '120%', right: 0, width: '320px',
             background: '#0F172A', border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: '24px', boxShadow: '0 25px 60px rgba(0,0,0,0.6)',

@@ -32,7 +32,7 @@ function App() {
   return (
     <>
       {!isAdminRoute && <Navbar />}
-      <main className={!isAdminRoute ? "container" : ""} style={!isAdminRoute ? { padding: '40px 24px', flex: 1 } : { }}>
+      <main className={!isAdminRoute ? "container app-main" : ""} style={!isAdminRoute ? { padding: '40px 24px', flex: 1 } : { }}>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
