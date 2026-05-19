@@ -218,12 +218,8 @@ const QuestDetail = () => {
   const activeNavigationList = isArchiveNavigation ? archiveNavigationList : accessibleQuests;
   
   const currentIndex = activeNavigationList.findIndex(q => String(q.id) === String(id));
-  const prevQuest = isArchiveNavigation
-    ? (currentIndex < activeNavigationList.length - 1 ? activeNavigationList[currentIndex - 1] : null)
-    : (currentIndex > 0 ? activeNavigationList[currentIndex + 1] : null);
-  const nextQuest = isArchiveNavigation
-    ? (currentIndex > 0 ? activeNavigationList[currentIndex + 1] : null)
-    : (currentIndex < activeNavigationList.length - 1 ? activeNavigationList[currentIndex - 1] : null);
+  const prevQuest = currentIndex > 0 ? activeNavigationList[currentIndex - 1] : null;
+  const nextQuest = currentIndex < activeNavigationList.length - 1 ? activeNavigationList[currentIndex + 1] : null;
   const getNavigationState = (questId) => isArchiveNavigation
     ? {
       fromArchive: true,
