@@ -133,9 +133,12 @@ export const AuthProvider = ({ children }) => {
 
     console.log("Login response", data);
     console.log("isAuthentificated", isAuthenticated);
-    
+
     // Fetch stats right after login
     try {
+
+      if (!isAuthenticated) return;
+
       const { data: meData } = await api.get('/Me');
       const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
       setUser(meData);
