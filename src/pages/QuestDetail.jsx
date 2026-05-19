@@ -318,10 +318,18 @@ const QuestDetail = () => {
               // Determine if this option is selected (either currently or in history)
               const isSelected = matchesIndex(selectedOption, optIndex) || matchesIndex(quest.userSelectedOptionIndex, optIndex) || matchesIndex(quest.userAnswerIndex, optIndex) || matchesIndex(quest.selectedOptionIndex, optIndex);
 
-              // Determine if this is the correct option
-              const isCorrectOption = result ? matchesIndex(result.correctIndex, optIndex) : (matchesIndex(quest.correctOptionIndex, optIndex) || matchesIndex(quest.correctIndex, optIndex));
+              const correctOptionIndex = result?.correctIndex ?? quest.correctOptionIndex ?? quest.correctIndex;
+              const hasCorrectOptionIndex = correctOptionIndex !== undefined && correctOptionIndex !== null;
 
-              const isWrongSelection = (result || isCompleted) && isSelected && !isCorrectOption;
+              // Determine if this is the correct option. Some archived attempts only include the
+              // user's selected answer and overall result, so fall back to that for display.
+              const isCorrectOption = hasCorrectOptionIndex
+                ? matchesIndex(correctOptionIndex, optIndex)
+                : isSelected && isCorrect === true;
+
+              const isWrongSelection = (result || isCompleted) && isSelected && isCorrect === false && !isCorrectOption;
+              const showAnswerMarker = (result || isCompleted) && isSelected;
+              const showCorrectMarker = (result || isCompleted) && isCorrectOption;
 
               let borderColor = 'rgba(255,255,255,0.08)';
               let bgColor = 'rgba(15, 23, 42, 0.4)';
@@ -340,6 +348,10 @@ const QuestDetail = () => {
                   borderColor = '#EF4444';
                   bgColor = 'rgba(239, 68, 68, 0.15)';
                   textColor = '#FCA5A5';
+                } else if (isSelected) {
+                  borderColor = '#6366F1';
+                  bgColor = 'rgba(99, 102, 241, 0.15)';
+                  textColor = '#C7D2FE';
                 } else {
                   textColor = '#475569';
                 }
@@ -366,7 +378,23 @@ const QuestDetail = () => {
                     {String.fromCharCode(65 + idx)}
                   </div>
                   <span style={{ flex: 1 }}>{opt.text || opt}</span>
-                  {(result || isCompleted) && isCorrectOption && <CheckCircle size={22} color="#10B981" style={{ filter: 'drop-shadow(0 0 10px rgba(16,185,129,0.4))' }} />}
+                  {showAnswerMarker && (
+                    <span style={{
+                      color: isWrongSelection ? '#FCA5A5' : isCorrectOption ? '#6EE7B7' : '#C7D2FE',
+                      background: isWrongSelection ? 'rgba(239, 68, 68, 0.12)' : isCorrectOption ? 'rgba(16, 185, 129, 0.12)' : 'rgba(99, 102, 241, 0.12)',
+                      border: `1px solid ${isWrongSelection ? 'rgba(239, 68, 68, 0.22)' : isCorrectOption ? 'rgba(16, 185, 129, 0.22)' : 'rgba(99, 102, 241, 0.22)'}`,
+                      borderRadius: '999px',
+                      padding: '5px 10px',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.5px',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      Your answer
+                    </span>
+                  )}
+                  {showCorrectMarker && <CheckCircle size={22} color="#10B981" style={{ filter: 'drop-shadow(0 0 10px rgba(16,185,129,0.4))' }} />}
                   {(result || isCompleted) && isWrongSelection && <AlertTriangle size={22} color="#EF4444" />}
                 </button>
               );
