@@ -220,6 +220,13 @@ const QuestDetail = () => {
   const currentIndex = activeNavigationList.findIndex(q => String(q.id) === String(id));
   const prevQuest = currentIndex > 0 ? activeNavigationList[currentIndex - 1] : null;
   const nextQuest = currentIndex < activeNavigationList.length - 1 ? activeNavigationList[currentIndex + 1] : null;
+  const navigationNotice = !prevQuest && !nextQuest
+    ? 'No other archived quests available.'
+    : !prevQuest
+      ? 'You are viewing the first quest.'
+      : !nextQuest
+        ? 'You are viewing the last quest.'
+        : '';
   const getNavigationState = (questId) => isArchiveNavigation
     ? {
       fromArchive: true,
@@ -269,13 +276,20 @@ const QuestDetail = () => {
         <Link to={isCompleted ? "/quest/completed" : "/quest"} className="btn-link" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94A3B8', textDecoration: 'none', fontWeight: 600 }}>
           <ChevronLeft size={18} /> {isCompleted ? 'Archive' : 'Daily Missions'}
         </Link>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="btn btn-outline" disabled={!prevQuest} onClick={() => navigate(`/quest/${prevQuest.id}`, { state: getNavigationState(prevQuest.id) })} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ChevronLeft size={18} /> Prev
-          </button>
-          <button className="btn btn-outline" disabled={!nextQuest} onClick={() => navigate(`/quest/${nextQuest.id}`, { state: getNavigationState(nextQuest.id) })} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            Next <ChevronRight size={18} />
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button className="btn btn-outline" disabled={!prevQuest} title={prevQuest ? 'Previous quest' : 'No previous quest'} onClick={() => navigate(`/quest/${prevQuest.id}`, { state: getNavigationState(prevQuest.id) })} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ChevronLeft size={18} /> Prev
+            </button>
+            <button className="btn btn-outline" disabled={!nextQuest} title={nextQuest ? 'Next quest' : 'No next quest'} onClick={() => navigate(`/quest/${nextQuest.id}`, { state: getNavigationState(nextQuest.id) })} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Next <ChevronRight size={18} />
+            </button>
+          </div>
+          {navigationNotice && (
+            <div style={{ color: '#64748B', fontSize: '0.78rem', fontWeight: 600 }}>
+              {navigationNotice}
+            </div>
+          )}
         </div>
       </div>
 
