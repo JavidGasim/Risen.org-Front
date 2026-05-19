@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Activity, Globe, Shield } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div style={{ padding: '40px 0', display: 'flex', flexDirection: 'column', gap: '80px' }}>
 
@@ -17,14 +20,13 @@ const Home = () => {
         <p style={{ fontSize: '1.2rem', color: '#94A3B8', lineHeight: 1.6, maxWidth: '600px', margin: '0 auto' }}>
           Duolingo for engineering — but with leagues, rankings, and real academic signal. Learn by doing, not memorizing.
         </p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '20px' }}>
-          <Link to="/register" className="btn btn-success" style={{ fontSize: '1.1rem', padding: '16px 32px' }}>
-            Join the League <ArrowRight size={20} />
-          </Link>
-          <a href="#universities" className="btn btn-outline" style={{ fontSize: '1.1rem', padding: '16px 32px' }}>
-            I represent a university
-          </a>
-        </div>
+        {!isAuthenticated && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '20px' }}>
+            <Link to="/register" className="btn btn-success" style={{ fontSize: '1.1rem', padding: '16px 32px' }}>
+              Join the League <ArrowRight size={20} />
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* Philosophy / Features grid */}
