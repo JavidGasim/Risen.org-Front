@@ -264,7 +264,13 @@ const CompletedQuests = () => {
             return (
               <div key={q.id} className="qrow slide-up"
                 style={{ background: 'rgba(10,13,20,0.85)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '24px 32px', display: 'flex', alignItems: 'center', gap: '24px', animationDelay: `${i * 30}ms`, cursor: 'pointer' }}
-                onClick={() => navigate(`/quest/${q.questId || q.id}`, { state: { archivedAttempt: q } })}>
+                onClick={() => navigate(`/quest/${q.questId || q.id}`, {
+                  state: {
+                    archivedAttempt: q,
+                    fromArchive: true,
+                    archiveQuestIds: filteredQuests.map(quest => quest.questId || quest.id)
+                  }
+                })}>
 
                 <div style={{
                   width: '48px', height: '48px', borderRadius: '14px',

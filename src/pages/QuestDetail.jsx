@@ -212,10 +212,25 @@ const QuestDetail = () => {
   const isFromToday = todayQuests.some(q => q.id === id);
   const navigationList = isFromToday ? todayQuests : allQuests;
   const accessibleQuests = navigationList.filter(q => isPremiumUser || !q.isPremiumOnly);
+  const archiveQuestIds = Array.isArray(location.state?.archiveQuestIds) ? location.state.archiveQuestIds : [];
+  const isArchiveNavigation = location.state?.fromArchive === true && archiveQuestIds.length > 0;
+  const archiveNavigationList = archiveQuestIds.map(questId => ({ id: questId }));
+  const activeNavigationList = isArchiveNavigation ? archiveNavigationList : accessibleQuests;
   
-  const currentIndex = accessibleQuests.findIndex(q => q.id === id);
-  const prevQuest = currentIndex > 0 ? accessibleQuests[currentIndex - 1] : null;
-  const nextQuest = currentIndex < accessibleQuests.length - 1 ? accessibleQuests[currentIndex + 1] : null;
+  const currentIndex = activeNavigationList.findIndex(q => String(q.id) === String(id));
+  const prevQuest = isArchiveNavigation
+    ? (currentIndex < activeNavigationList.length - 1 ? activeNavigationList[currentIndex + 1] : null)
+    : (currentIndex > 0 ? activeNavigationList[currentIndex - 1] : null);
+  const nextQuest = isArchiveNavigation
+    ? (currentIndex > 0 ? activeNavigationList[currentIndex - 1] : null)
+    : (currentIndex < activeNavigationList.length - 1 ? activeNavigationList[currentIndex + 1] : null);
+  const getNavigationState = (questId) => isArchiveNavigation
+    ? {
+      fromArchive: true,
+      archiveQuestIds,
+      archivedAttempt: getAttemptQuestId(location.state?.archivedAttempt) === questId ? location.state.archivedAttempt : undefined
+    }
+    : undefined;
 
   if (loading) return (
     <div className="flex-center fade-in" style={{ minHeight: '60vh', flexDirection: 'column', gap: '20px' }}>
@@ -259,10 +274,10 @@ const QuestDetail = () => {
           <ChevronLeft size={18} /> {isCompleted ? 'Archive' : 'Daily Missions'}
         </Link>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="btn btn-outline" disabled={!prevQuest} onClick={() => navigate(`/quest/${prevQuest.id}`)} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button className="btn btn-outline" disabled={!prevQuest} onClick={() => navigate(`/quest/${prevQuest.id}`, { state: getNavigationState(prevQuest.id) })} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ChevronLeft size={18} /> Prev
           </button>
-          <button className="btn btn-outline" disabled={!nextQuest} onClick={() => navigate(`/quest/${nextQuest.id}`)} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button className="btn btn-outline" disabled={!nextQuest} onClick={() => navigate(`/quest/${nextQuest.id}`, { state: getNavigationState(nextQuest.id) })} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             Next <ChevronRight size={18} />
           </button>
         </div>
@@ -455,7 +470,7 @@ const QuestDetail = () => {
 
       <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'center' }}>
         {nextQuest && isCompleted && (
-          <button className="btn btn-primary" onClick={() => navigate(`/quest/${nextQuest.id}`)} style={{ padding: '16px 48px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.1rem', fontWeight: 700 }}>
+          <button className="btn btn-primary" onClick={() => navigate(`/quest/${nextQuest.id}`, { state: getNavigationState(nextQuest.id) })} style={{ padding: '16px 48px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.1rem', fontWeight: 700 }}>
             Advance to Next Module <ChevronRight size={22} />
           </button>
         )}
