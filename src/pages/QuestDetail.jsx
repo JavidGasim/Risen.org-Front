@@ -208,20 +208,40 @@ const QuestDetail = () => {
     }
   };
 
+  const isQuestCompleted = (q) => (
+    q.isCompletedToday === true ||
+    q.isCompleted === true ||
+    q.isCompletedEver === true ||
+    q.alreadyCompletedEver === true ||
+    q.already_completed_ever === true ||
+    q.isSolved === true ||
+    q.is_solved === true ||
+    q.is_completed === true ||
+    (q.completedDateUtc !== undefined && q.completedDateUtc !== null) ||
+    (q.completed_date_utc !== undefined && q.completed_date_utc !== null) ||
+    (q.userSelectedOptionIndex !== undefined && q.userSelectedOptionIndex !== null) ||
+    (q.userAnswerIndex !== undefined && q.userAnswerIndex !== null) ||
+    (q.selectedOptionIndex !== undefined && q.selectedOptionIndex !== null) ||
+    (q.user_selected_option_index !== undefined && q.user_selected_option_index !== null) ||
+    (q.user_answer_index !== undefined && q.user_answer_index !== null) ||
+    (q.selected_option_index !== undefined && q.selected_option_index !== null)
+  );
+
   // Determine which list to use for navigation
   const isFromToday = todayQuests.some(q => q.id === id);
   const navigationList = isFromToday ? todayQuests : allQuests;
   const accessibleQuests = navigationList.filter(q => isPremiumUser || !q.isPremiumOnly);
+  const activeQuestNavigationList = accessibleQuests.filter(q => String(q.id) === String(id) || !isQuestCompleted(q));
   const archiveQuestIds = Array.isArray(location.state?.archiveQuestIds) ? location.state.archiveQuestIds : [];
   const isArchiveNavigation = location.state?.fromArchive === true && archiveQuestIds.length > 0;
   const archiveNavigationList = archiveQuestIds.map(questId => ({ id: questId }));
-  const activeNavigationList = isArchiveNavigation ? archiveNavigationList : accessibleQuests;
+  const activeNavigationList = isArchiveNavigation ? archiveNavigationList : activeQuestNavigationList;
   
   const currentIndex = activeNavigationList.findIndex(q => String(q.id) === String(id));
   const prevQuest = currentIndex > 0 ? activeNavigationList[currentIndex - 1] : null;
   const nextQuest = currentIndex < activeNavigationList.length - 1 ? activeNavigationList[currentIndex + 1] : null;
   const navigationNotice = !prevQuest && !nextQuest
-    ? 'No other archived quests available.'
+    ? (isArchiveNavigation ? 'No other archived quests available.' : 'No incomplete quests available.')
     : !prevQuest
       ? 'You are viewing the first quest.'
       : !nextQuest
@@ -231,7 +251,7 @@ const QuestDetail = () => {
     ? {
       fromArchive: true,
       archiveQuestIds,
-      archivedAttempt: getAttemptQuestId(location.state?.archivedAttempt) === questId ? location.state.archivedAttempt : undefined
+      archivedAttempt: String(getAttemptQuestId(location.state?.archivedAttempt)) === String(questId) ? location.state.archivedAttempt : undefined
     }
     : undefined;
 
