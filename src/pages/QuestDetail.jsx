@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import {
+  getAttemptCorrectIndex,
+  getAttemptIsCorrect,
+  getAttemptQuestId,
+  getAttemptSelectedIndex,
+  toArray
+} from '../utils/questAttempts';
 import {
   Target, Zap, ChevronLeft, ChevronRight, CheckCircle,
   AlertTriangle, Disc, Trophy, BookOpen, MessageSquare, Lock
@@ -10,6 +17,7 @@ import {
 const QuestDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { refreshStats, user } = useAuth();
   const isPremiumUser = user?.plan === 'Premium';
 
@@ -31,15 +39,18 @@ const QuestDetail = () => {
       setError('');
       setLoading(true);
       try {
-        const [todayRes, allRes, subRes] = await Promise.all([
+        const [todayRes, allRes, subRes, attemptsRes] = await Promise.all([
           api.get('/QuestsFeed/today').catch(() => ({ data: { items: [] } })),
           api.get('/QuestsFeed/all').catch(() => ({ data: [] })),
-          api.get('/Subjects').catch(() => ({ data: [] }))
+          api.get('/Subjects').catch(() => ({ data: [] })),
+          api.get('/Quest-Attempts', { params: { limit: 100 } }).catch(() => ({ data: [] }))
         ]);
 
-        const todayItems = todayRes.data?.items || [];
-        const allItems = Array.isArray(allRes.data) ? allRes.data : (allRes.data?.items || []);
+        const todayItems = toArray(todayRes.data);
+        const allItems = toArray(allRes.data);
         const subList = subRes.data?.subjects || subRes.data?.items || subRes.data || [];
+        const archivedAttempt = location.state?.archivedAttempt;
+        const attempts = toArray(attemptsRes.data);
 
         setAllQuests(allItems);
         setTodayQuests(todayItems);
@@ -49,11 +60,47 @@ const QuestDetail = () => {
         if (!foundQuest) foundQuest = allItems.find(q => q.id === id);
 
         if (foundQuest) {
-          setQuest(foundQuest);
+          const matchingAttempt = archivedAttempt && String(getAttemptQuestId(archivedAttempt)) === String(id)
+            ? archivedAttempt
+            : attempts.find(attempt => {
+              const sameQuest = String(getAttemptQuestId(attempt)) === String(id);
+              const attemptUserId = attempt.userId ?? attempt.user_id ?? attempt.UserId;
+              const sameUser = !user?.id || !attemptUserId || String(attemptUserId) === String(user.id);
+              return sameQuest && sameUser;
+            });
+
+          setQuest(matchingAttempt ? {
+            ...foundQuest,
+            ...matchingAttempt,
+            id: foundQuest.id,
+            attemptId: matchingAttempt.id,
+            questId: getAttemptQuestId(matchingAttempt),
+            isCorrect: getAttemptIsCorrect(matchingAttempt),
+            userSelectedOptionIndex: getAttemptSelectedIndex(matchingAttempt),
+            correctOptionIndex: getAttemptCorrectIndex(matchingAttempt) ?? foundQuest.correctOptionIndex ?? foundQuest.correctIndex
+          } : foundQuest);
         } else {
           try {
             const directRes = await api.get(`/QuestsFeed/${id}`);
-            setQuest(directRes.data);
+            const matchingAttempt = archivedAttempt && String(getAttemptQuestId(archivedAttempt)) === String(id)
+              ? archivedAttempt
+              : attempts.find(attempt => {
+                const sameQuest = String(getAttemptQuestId(attempt)) === String(id);
+                const attemptUserId = attempt.userId ?? attempt.user_id ?? attempt.UserId;
+                const sameUser = !user?.id || !attemptUserId || String(attemptUserId) === String(user.id);
+                return sameQuest && sameUser;
+              });
+
+            setQuest(matchingAttempt ? {
+              ...directRes.data,
+              ...matchingAttempt,
+              id: directRes.data.id ?? id,
+              attemptId: matchingAttempt.id,
+              questId: getAttemptQuestId(matchingAttempt),
+              isCorrect: getAttemptIsCorrect(matchingAttempt),
+              userSelectedOptionIndex: getAttemptSelectedIndex(matchingAttempt),
+              correctOptionIndex: getAttemptCorrectIndex(matchingAttempt) ?? directRes.data.correctOptionIndex ?? directRes.data.correctIndex
+            } : directRes.data);
           } catch (e) {
             setError("Quest module not found.");
           }
@@ -65,7 +112,7 @@ const QuestDetail = () => {
       }
     };
     loadMetadata();
-  }, [id]);
+  }, [id, location.state, user?.id]);
 
   const isCompleted = quest ? (
     quest.isCompletedToday === true ||
@@ -91,15 +138,21 @@ const QuestDetail = () => {
   useEffect(() => {
     if (quest && isCompleted && !result) {
       // If user had a previous selection, show it
-      const prevSelection = quest.userSelectedOptionIndex ?? quest.userAnswerIndex ?? quest.selectedOptionIndex;
+      const prevSelection = getAttemptSelectedIndex(quest);
       if (prevSelection !== undefined && prevSelection !== null) {
         setSelectedOption(prevSelection);
       }
 
       // If we have completion data, show the result immediately
-      const correctIdxValue = quest.correctOptionIndex ?? quest.correctIndex ?? quest.CorrectIndex;
-      const explicitIsCorrect = quest.isCorrect ?? quest.is_correct ?? quest.IsCorrect ?? quest.isSolved ?? quest.IsSolved;
-      const isCorrectValue = explicitIsCorrect ?? (prevSelection !== undefined && prevSelection === correctIdxValue);
+      const correctIdxValue = getAttemptCorrectIndex(quest);
+      const explicitIsCorrect = getAttemptIsCorrect(quest);
+      const isCorrectValue = explicitIsCorrect ?? (
+        prevSelection !== undefined &&
+        prevSelection !== null &&
+        correctIdxValue !== undefined &&
+        correctIdxValue !== null &&
+        Number(prevSelection) === Number(correctIdxValue)
+      );
 
       // If we have completion data, show the result immediately
 
@@ -135,7 +188,7 @@ const QuestDetail = () => {
 
       // Normalize response for the UI
       setResult({
-        isCorrect: data.isCorrect ?? data.is_correct ?? data.IsCorrect ?? data.isSolved ?? data.IsSolved ?? true, // Fallback to true if we don't have it explicitly false but it succeeded
+        isCorrect: getAttemptIsCorrect(data) ?? true, // Fallback to true if we don't have it explicitly false but it succeeded
         correctIndex: data.correctIndex ?? data.correct_index ?? data.CorrectIndex ?? data.correctOptionIndex,
         xpEarned: data.awardedXp ?? data.xp_reward ?? data.awarded_xp ?? data.AwardedXp ?? data.xpReward,
         explanation: data.explanation || data.analysisReport || data.Explanation || data.AnalysisReport || quest.explanation || quest.analysisReport,
@@ -194,9 +247,7 @@ const QuestDetail = () => {
     );
   }
 
-  const isCorrect = result 
-    ? (result.isCorrect ?? result.is_correct ?? result.IsCorrect) 
-    : (quest?.isCorrect ?? quest?.is_correct ?? quest?.IsCorrect ?? (quest?.isSolved || quest?.is_solved));
+  const isCorrect = result ? getAttemptIsCorrect(result) : getAttemptIsCorrect(quest);
   const options = quest.options || [];
   const subjectName = getSubjectName(quest.subject_id || quest.subjectId || quest.subjectCode || quest.subjectcode);
 
@@ -262,12 +313,13 @@ const QuestDetail = () => {
             <h3 style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700 }}>Select Solution:</h3>
             {options.map((opt, idx) => {
               const optIndex = opt.index !== undefined ? opt.index : idx;
+              const matchesIndex = (value, target) => value !== undefined && value !== null && Number(value) === Number(target);
 
               // Determine if this option is selected (either currently or in history)
-              const isSelected = selectedOption === optIndex || quest.userSelectedOptionIndex === optIndex || quest.userAnswerIndex === optIndex || quest.selectedOptionIndex === optIndex;
+              const isSelected = matchesIndex(selectedOption, optIndex) || matchesIndex(quest.userSelectedOptionIndex, optIndex) || matchesIndex(quest.userAnswerIndex, optIndex) || matchesIndex(quest.selectedOptionIndex, optIndex);
 
               // Determine if this is the correct option
-              const isCorrectOption = result ? result.correctIndex === optIndex : (quest.correctOptionIndex === optIndex || quest.correctIndex === optIndex);
+              const isCorrectOption = result ? matchesIndex(result.correctIndex, optIndex) : (matchesIndex(quest.correctOptionIndex, optIndex) || matchesIndex(quest.correctIndex, optIndex));
 
               const isWrongSelection = (result || isCompleted) && isSelected && !isCorrectOption;
 

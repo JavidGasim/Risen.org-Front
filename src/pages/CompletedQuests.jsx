@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { getAttemptIsCorrect, getAttemptQuestId, toArray } from '../utils/questAttempts';
 import {
   Archive, CheckCircle, AlertTriangle, Disc, Lock,
   ChevronRight, Filter, BookOpen, Layers, ChevronLeft
@@ -34,29 +35,29 @@ const CompletedQuests = () => {
           api.get('/Subjects')
         ]);
 
-        const attempts = qRes.data || qRes.data?.items || [];
-        const allQuests = Array.isArray(allRes.data) ? allRes.data : (allRes.data?.items || []);
+        const attempts = toArray(qRes.data);
+        const allQuests = toArray(allRes.data);
         const sList = sRes.data?.subjects || sRes.data?.items || sRes.data || [];
 
-        const filteredAttempts = attempts.filter(attempt => attempt.userId === user.id);
-
-        console.log("A: ", filteredAttempts);
-
+        const filteredAttempts = attempts.filter(attempt => {
+          const attemptUserId = attempt.userId ?? attempt.user_id ?? attempt.UserId;
+          return !user?.id || !attemptUserId || String(attemptUserId) === String(user.id);
+        });
 
         // Enrich attempts with metadata from the allQuests feed (which contains SubjectCode, Difficulty, etc.)
         const enrichedAttempts = filteredAttempts.map(attempt => {
-          const questMetadata = allQuests.find(aq => aq.id === attempt.questId);
+          const questId = getAttemptQuestId(attempt);
+          const questMetadata = allQuests.find(aq => String(aq.id) === String(questId));
           return {
             ...attempt,
-            isCorrect: attempt.isCorrect ?? attempt.is_correct ?? attempt.IsCorrect ?? attempt.isSolved ?? attempt.IsSolved,
+            questId,
+            isCorrect: getAttemptIsCorrect(attempt),
             subjectCode: attempt.subjectCode || questMetadata?.subjectCode || questMetadata?.subject_id,
             difficulty: attempt.difficulty || questMetadata?.difficulty || 1,
             // Fallback for title if needed
             questTitle: attempt.questTitle || questMetadata?.title || questMetadata?.questionText
           };
         });
-
-        console.log("B: ", enrichedAttempts);
 
         setQuests(enrichedAttempts);
         setSubjects(sList);
@@ -84,7 +85,7 @@ const CompletedQuests = () => {
     const matchesSubject = selectedSubjectId === 'all' || 
       (q.subjectCode || q.subjectcode || q.subject_id || q.subjectId || '').toString().toLowerCase() === selectedSubjectId.toLowerCase();
     
-    const isCorrect = q.isCorrect ?? q.is_correct ?? (q.isSolved || q.is_solved);
+    const isCorrect = getAttemptIsCorrect(q);
     const matchesStatus = selectedStatus === 'all' || 
       (selectedStatus === 'success' && isCorrect) || 
       (selectedStatus === 'failed' && !isCorrect);
@@ -172,7 +173,7 @@ const CompletedQuests = () => {
 
         <div style={{ textAlign: 'right', display: 'flex', gap: '12px' }}>
           <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '10px 20px', borderRadius: '16px', textAlign: 'center' }}>
-            <div style={{ color: '#10B981', fontSize: '1.4rem', fontWeight: 800, lineHeight: 1 }}>{quests.filter(q => q.isCorrect ?? q.is_correct ?? q.isSolved).length}</div>
+            <div style={{ color: '#10B981', fontSize: '1.4rem', fontWeight: 800, lineHeight: 1 }}>{quests.filter(q => getAttemptIsCorrect(q)).length}</div>
             <div style={{ color: '#64748B', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>Solved</div>
           </div>
           <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', padding: '10px 20px', borderRadius: '16px', textAlign: 'center' }}>
@@ -258,12 +259,12 @@ const CompletedQuests = () => {
             const d = diffMap[q.difficulty] || diffMap[1];
             const subjectName = getSubjectName(q.subject_id || q.subjectId || q.subjectCode || q.subjectcode);
 
-            const isCorrect = q.isCorrect ?? q.is_correct ?? (q.isSolved || q.is_solved);
+            const isCorrect = getAttemptIsCorrect(q);
 
             return (
               <div key={q.id} className="qrow slide-up"
                 style={{ background: 'rgba(10,13,20,0.85)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '24px 32px', display: 'flex', alignItems: 'center', gap: '24px', animationDelay: `${i * 30}ms`, cursor: 'pointer' }}
-                onClick={() => navigate(`/quest/${q.questId || q.id}`)}>
+                onClick={() => navigate(`/quest/${q.questId || q.id}`, { state: { archivedAttempt: q } })}>
 
                 <div style={{
                   width: '48px', height: '48px', borderRadius: '14px',
