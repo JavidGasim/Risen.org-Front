@@ -87,7 +87,7 @@ const Register = () => {
         formData.lastName,
         formData.universityName
       );
-      navigate('/dashboard');
+      navigate('/login');
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -136,7 +136,7 @@ const Register = () => {
     setLoading(true);
     try {
       await verifyRegister(formData.email, code);
-      navigate('/dashboard');
+      navigate('/login');
     } catch (err) {
       setError(
         err.response?.data?.message ||

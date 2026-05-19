@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getCookie } from './cookie';
+import { deleteCookie, getCookie } from './cookie';
 
 // Using the provided ASP.NET Core dev port
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://risen-org-back.onrender.com/api';
@@ -21,6 +21,21 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      deleteCookie('risen_token');
+
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login');
+      }
+    }
+
+    return Promise.reject(error);
+  }
 );
 
 export default api;
