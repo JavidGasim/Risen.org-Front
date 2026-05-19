@@ -131,6 +131,9 @@ export const AuthProvider = ({ children }) => {
     if (data.user) setUser(data.user);
     setIsAuthenticated(true);
 
+    console.log("Login response", data);
+    console.log("isAuthentificated", isAuthenticated);
+    
     // Fetch stats right after login
     try {
       const { data: meData } = await api.get('/Me');
