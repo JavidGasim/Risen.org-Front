@@ -114,13 +114,19 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const { data } = await api.post('/Auth/login', { Email: email, Password: password });
 
-    const returnedToken = data.token || data.accessToken || data.access;
-    let adminStatus = false;
-    if (returnedToken) {
-      adminStatus = checkAdminRole(returnedToken);
-      setCookie('risen_token', returnedToken);
-      setIsAdmin(adminStatus);
+    const returnedToken = data.token || data.accessToken || data.access || (typeof data === 'string' ? data : null);
+
+    if (data && (data.success === false || data.isSuccess === false || data.succeeded === false || data.isSucceeded === false)) {
+      throw new Error(data.message || 'Invalid credentials');
     }
+
+    if (!returnedToken) {
+      throw new Error(data.message || 'Invalid email or password');
+    }
+
+    const adminStatus = checkAdminRole(returnedToken);
+    setCookie('risen_token', returnedToken);
+    setIsAdmin(adminStatus);
 
     if (data.user) setUser(data.user);
     setIsAuthenticated(true);
@@ -153,7 +159,7 @@ export const AuthProvider = ({ children }) => {
       UniversityName: universityName
     };
     const { data } = await api.post('/Auth/register', payload);
-    
+
     const returnedToken = data.token || data.accessToken || data.access;
     let adminStatus = false;
     if (returnedToken) {
