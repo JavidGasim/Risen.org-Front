@@ -1,9 +1,30 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Activity, Globe, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
+  const [subjects, setSubjects] = useState([]);
+  const [subjectsLoading, setSubjectsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const { data } = await api.get('/Subjects');
+        const list = data?.subjects || data?.items || data || [];
+        setSubjects(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.error('Failed to load home subjects', err);
+        setSubjects([]);
+      } finally {
+        setSubjectsLoading(false);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
 
   return (
     <div style={{ padding: '40px 0', display: 'flex', flexDirection: 'column', gap: '80px' }}>
@@ -52,9 +73,17 @@ const Home = () => {
       <section style={{ background: 'rgba(99, 102, 241, 0.03)', padding: '60px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.02)' }}>
         <h2 style={{ textAlign: 'center', fontSize: '2.5rem', marginBottom: '40px' }}>Master the core disciplines</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-          {['Mechanics', 'Thermodynamics', 'Circuits', 'Programming'].map((subj) => (
-            <div key={subj} className="glass-panel" style={{ textAlign: 'center', padding: '24px', background: 'rgba(0,0,0,0.4)' }}>
-              <h4 style={{ margin: 0, color: '#E2E8F0' }}>{subj}</h4>
+          {subjectsLoading ? (
+            <div className="glass-panel" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '24px', background: 'rgba(0,0,0,0.4)', color: '#94A3B8' }}>
+              Loading disciplines...
+            </div>
+          ) : subjects.length === 0 ? (
+            <div className="glass-panel" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '24px', background: 'rgba(0,0,0,0.4)', color: '#94A3B8' }}>
+              No disciplines available yet.
+            </div>
+          ) : subjects.map((subject) => (
+            <div key={subject.id || subject.code || subject.name} className="glass-panel" style={{ textAlign: 'center', padding: '24px', background: 'rgba(0,0,0,0.4)' }}>
+              <h4 style={{ margin: 0, color: '#E2E8F0' }}>{subject.name}</h4>
             </div>
           ))}
         </div>
