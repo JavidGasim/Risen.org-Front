@@ -30,7 +30,7 @@ export default function AdminLayout() {
         padding: '24px 0',
         overflowY: 'auto'
       }}>
-        <div style={{ padding: '0 24px', marginBottom: '40px' }}>
+        <div className="admin-brand" style={{ padding: '0 24px', marginBottom: '40px' }}>
           <h1 style={{ 
             fontSize: '24px', 
             fontWeight: 'bold', 
@@ -45,13 +45,14 @@ export default function AdminLayout() {
           </h1>
         </div>
 
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 12px' }}>
+        <nav className="admin-nav" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 12px' }}>
           {navigation.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.name}
                 to={item.href}
+                className="admin-nav-link"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -73,7 +74,7 @@ export default function AdminLayout() {
           })}
         </nav>
 
-        <div style={{ padding: '0 24px', marginTop: 'auto' }}>
+        <div className="admin-sidebar-footer" style={{ padding: '0 24px', marginTop: 'auto' }}>
           <button
             onClick={logout}
             style={{ 

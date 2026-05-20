@@ -82,8 +82,8 @@ export default function AdminPlans() {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px' }}>
+    <div className="admin-page" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
+      <header className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px' }}>
         <div>
           <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>
             Subscription Plans
@@ -100,12 +100,12 @@ export default function AdminPlans() {
         </button>
       </header>
 
-      <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+      <div className="glass-panel admin-table-panel" style={{ padding: '24px', borderRadius: '16px' }}>
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>Loading plans...</div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', color: 'white' }}>
+          <div className="admin-table-scroll" style={{ overflowX: 'auto' }}>
+            <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', color: 'white' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>
                   <th style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>Plan Name</th>
@@ -157,12 +157,12 @@ export default function AdminPlans() {
       </div>
 
       {isModalOpen && (
-        <div style={{
+        <div className="admin-modal-overlay" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', borderRadius: '24px', position: 'relative' }}>
+          <div className="glass-panel admin-modal" style={{ width: '100%', maxWidth: '400px', padding: '32px', borderRadius: '24px', position: 'relative' }}>
             <button
               onClick={handleCloseModal}
               style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}

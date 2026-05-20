@@ -158,8 +158,8 @@ export default function AdminQuests() {
   });
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px' }}>
+    <div className="admin-page" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
+      <header className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px' }}>
         <div>
           <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>
             Quest Management
@@ -167,8 +167,8 @@ export default function AdminQuests() {
           <p style={{ color: 'rgba(255,255,255,0.6)' }}>Create and orchestrate gamified tasks and questions.</p>
         </div>
 
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <div style={{ position: 'relative', width: '300px' }}>
+        <div className="admin-actions" style={{ display: 'flex', gap: '16px' }}>
+          <div className="admin-search" style={{ position: 'relative', width: '300px' }}>
             <Search size={18} color="rgba(255,255,255,0.4)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
@@ -251,12 +251,12 @@ export default function AdminQuests() {
         </div>
       </div>
 
-      <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+      <div className="glass-panel admin-table-panel" style={{ padding: '24px', borderRadius: '16px' }}>
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>Loading quests...</div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', color: 'white' }}>
+          <div className="admin-table-scroll" style={{ overflowX: 'auto' }}>
+            <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', color: 'white' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>
                   <th style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>Subject</th>
@@ -311,12 +311,12 @@ export default function AdminQuests() {
       </div>
 
       {isModalOpen && (
-        <div style={{
+        <div className="admin-modal-overlay" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '32px', borderRadius: '24px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="glass-panel admin-modal" style={{ width: '100%', maxWidth: '600px', padding: '32px', borderRadius: '24px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
             <button
               onClick={handleCloseModal}
               style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}

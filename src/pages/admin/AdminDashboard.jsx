@@ -45,7 +45,7 @@ export default function AdminDashboard() {
   if (loading) return <div style={{ color: 'white' }}>Loading dashboard...</div>;
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="admin-page" style={{ maxWidth: '1200px', margin: '0 auto' }}>
       <header style={{ marginBottom: '40px' }}>
         <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>
           Dashboard Overview
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
       </header>
 
       {/* Stats Cards */}
-      <div style={{ 
+      <div className="admin-stats-grid" style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
         gap: '24px',
@@ -84,14 +84,14 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent Actions Table */}
-      <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+      <div className="glass-panel admin-table-panel" style={{ padding: '24px', borderRadius: '16px' }}>
         <h2 style={{ fontSize: '20px', fontWeight: '600', color: 'white', marginBottom: '24px' }}>
           Recent Admin Actions
         </h2>
         
         {stats.recentActions && stats.recentActions.length > 0 ? (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', color: 'white' }}>
+          <div className="admin-table-scroll" style={{ overflowX: 'auto' }}>
+            <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', color: 'white' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>
                   <th style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>Action type</th>

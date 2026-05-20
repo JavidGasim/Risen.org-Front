@@ -92,8 +92,8 @@ export default function AdminUsers() {
   );
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px' }}>
+    <div className="admin-page" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <header className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px' }}>
         <div>
           <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>
             User Management
@@ -101,7 +101,7 @@ export default function AdminUsers() {
           <p style={{ color: 'rgba(255,255,255,0.6)' }}>Browse and manage all registered platform users.</p>
         </div>
 
-        <div style={{ position: 'relative', width: '300px' }}>
+        <div className="admin-search" style={{ position: 'relative', width: '300px' }}>
           <Search size={18} color="rgba(255,255,255,0.4)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
@@ -121,12 +121,12 @@ export default function AdminUsers() {
         </div>
       </header>
 
-      <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+      <div className="glass-panel admin-table-panel" style={{ padding: '24px', borderRadius: '16px' }}>
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>Loading users...</div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', color: 'white' }}>
+          <div className="admin-table-scroll" style={{ overflowX: 'auto' }}>
+            <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', color: 'white' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>
                   <th style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>User</th>

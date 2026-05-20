@@ -122,7 +122,7 @@ export default function AdminSettings() {
   ];
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto' }} className="fade-in">
+    <div style={{ maxWidth: '1000px', margin: '0 auto' }} className="admin-page fade-in">
       <header style={{ marginBottom: '40px' }}>
         <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>
           Admin <span className="text-gradient">Settings</span>
@@ -143,9 +143,9 @@ export default function AdminSettings() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '32px' }}>
+      <div className="admin-settings-layout" style={{ display: 'flex', gap: '32px' }}>
         {/* Tabs Sidebar */}
-        <div style={{ width: '240px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="admin-settings-tabs" style={{ width: '240px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -156,7 +156,6 @@ export default function AdminSettings() {
                 gap: '12px',
                 padding: '12px 16px',
                 borderRadius: '12px',
-                border: 'none',
                 background: activeTab === tab.id ? 'linear-gradient(90deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))' : 'transparent',
                 color: activeTab === tab.id ? 'white' : 'rgba(255,255,255,0.6)',
                 cursor: 'pointer',
