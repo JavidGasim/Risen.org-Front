@@ -41,27 +41,63 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const hasAdminRole = (value) => {
+    if (!value) return false;
+
+    if (typeof value === "string") {
+      return value.toLowerCase() === "admin";
+    }
+
+    if (Array.isArray(value)) {
+      return value.some(hasAdminRole);
+    }
+
+    if (typeof value === "object") {
+      return Boolean(
+        value.isAdmin ||
+          value.IsAdmin ||
+          hasAdminRole(value.role) ||
+          hasAdminRole(value.Role) ||
+          hasAdminRole(value.roles) ||
+          hasAdminRole(value.Roles) ||
+          hasAdminRole(value.userRoles) ||
+          hasAdminRole(value.UserRoles),
+      );
+    }
+
+    return false;
+  };
+
+  const resolveAdminStatus = (token, userData) =>
+    checkAdminRole(token) || hasAdminRole(userData);
+
+  const refreshCurrentUser = async () => {
+    const token = getCookie("risen_token");
+    const { data } = await api.get("/Me");
+    const { data: rankData } = await api
+      .get("/Leaderboards/my-rank")
+      .catch(() => ({ data: null }));
+
+    const combinedStats = { ...(data.stats || data) };
+    if (rankData) {
+      combinedStats.globalRank = rankData.rank || rankData;
+      if (rankData.rank) combinedStats.rank = rankData.rank;
+    }
+
+    setUser(data);
+    setStats(combinedStats);
+    setIsAuthenticated(true);
+    setIsAdmin(resolveAdminStatus(token, data));
+
+    return data;
+  };
+
   useEffect(() => {
     const initAuth = async () => {
       const token = getCookie("risen_token");
       if (token) {
         try {
-          // Verify token and get user/stats from the flat response object
-          const { data } = await api.get("/Me");
-          const { data: rankData } = await api
-            .get("/Leaderboards/my-rank")
-            .catch(() => ({ data: null }));
-          setUser(data);
-
-          const combinedStats = { ...(data.stats || data) };
-          if (rankData) {
-            combinedStats.globalRank = rankData.rank || rankData;
-            if (rankData.rank) combinedStats.rank = rankData.rank;
-          }
-          setStats(combinedStats);
-
-          setIsAuthenticated(true);
-          setIsAdmin(checkAdminRole(token));
+          await refreshCurrentUser();
         } catch (error) {
           console.error("Auth check failed:", error);
           // Only logout on definitive authentication failures (401/403).
@@ -113,20 +149,35 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (!signalRConnection || !user?.id) return;
 
-    const handleRoleUpdated = (data) => {
-      const updatedUserId = data.userId ?? data.UserId;
-      const newRole = data.role ?? data.Role;
+    const handleRoleUpdated = async (data) => {
+      const updatedUserId = data?.userId ?? data?.UserId ?? data;
+      const newRole = data?.role ?? data?.Role ?? data?.roles ?? data?.Roles;
 
       if (user.id === updatedUserId) {
         console.log("Role changed:", newRole);
-        window.location.reload();
+        const roleSaysAdmin = hasAdminRole(newRole) || hasAdminRole(data);
+
+        if (roleSaysAdmin) {
+          setIsAdmin(true);
+        }
+
+        try {
+          const updatedUser = await refreshCurrentUser();
+          if (!roleSaysAdmin && !hasAdminRole(updatedUser)) {
+            setIsAdmin(false);
+          }
+        } catch (error) {
+          console.error("Failed to refresh user after role update", error);
+        }
       }
     };
 
     signalRConnection.on("UserRoleUpdated", handleRoleUpdated);
+    signalRConnection.on("RoleUpdated", handleRoleUpdated);
 
     return () => {
       signalRConnection.off("UserRoleUpdated", handleRoleUpdated);
+      signalRConnection.off("RoleUpdated", handleRoleUpdated);
     };
   }, [signalRConnection, user?.id]);
 
@@ -156,7 +207,7 @@ export const AuthProvider = ({ children }) => {
       throw new Error(data.message || "Invalid email or password");
     }
 
-    const adminStatus = checkAdminRole(returnedToken);
+    const adminStatus = resolveAdminStatus(returnedToken, data.user);
     setCookie("risen_token", returnedToken);
     setIsAdmin(adminStatus);
 
@@ -168,20 +219,7 @@ export const AuthProvider = ({ children }) => {
 
     // Fetch stats right after login
     try {
-      if (!isAuthenticated) return;
-
-      const { data: meData } = await api.get("/Me");
-      const { data: rankData } = await api
-        .get("/Leaderboards/my-rank")
-        .catch(() => ({ data: null }));
-      setUser(meData);
-
-      const combinedStats = { ...(meData.stats || meData) };
-      if (rankData) {
-        combinedStats.globalRank = rankData.rank || rankData;
-        if (rankData.rank) combinedStats.rank = rankData.rank;
-      }
-      setStats(combinedStats);
+      await refreshCurrentUser();
     } catch (e) {
       console.error(e);
     }
@@ -208,7 +246,7 @@ export const AuthProvider = ({ children }) => {
     const returnedToken = data.token || data.accessToken || data.access;
     let adminStatus = false;
     if (returnedToken) {
-      adminStatus = checkAdminRole(returnedToken);
+      adminStatus = resolveAdminStatus(returnedToken, data.user);
       setCookie("risen_token", returnedToken);
       setIsAdmin(adminStatus);
     }
@@ -217,18 +255,7 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
 
     try {
-      const { data: meData } = await api.get("/Me");
-      const { data: rankData } = await api
-        .get("/Leaderboards/my-rank")
-        .catch(() => ({ data: null }));
-      setUser(meData);
-
-      const combinedStats = { ...(meData.stats || meData) };
-      if (rankData) {
-        combinedStats.globalRank = rankData.rank || rankData;
-        if (rankData.rank) combinedStats.rank = rankData.rank;
-      }
-      setStats(combinedStats);
+      await refreshCurrentUser();
     } catch (e) {
       console.error(e);
     }
@@ -245,25 +272,14 @@ export const AuthProvider = ({ children }) => {
     const returnedToken = data.token || data.accessToken || data.access;
     if (returnedToken) {
       setCookie("risen_token", returnedToken);
-      setIsAdmin(checkAdminRole(returnedToken));
+      setIsAdmin(resolveAdminStatus(returnedToken, data.user));
     }
 
     if (data.user) setUser(data.user);
     setIsAuthenticated(true);
 
     try {
-      const { data: meData } = await api.get("/Me");
-      const { data: rankData } = await api
-        .get("/Leaderboards/my-rank")
-        .catch(() => ({ data: null }));
-      setUser(meData);
-
-      const combinedStats = { ...(meData.stats || meData) };
-      if (rankData) {
-        combinedStats.globalRank = rankData.rank || rankData;
-        if (rankData.rank) combinedStats.rank = rankData.rank;
-      }
-      setStats(combinedStats);
+      await refreshCurrentUser();
     } catch (e) {
       console.error(e);
     }
@@ -295,12 +311,10 @@ export const AuthProvider = ({ children }) => {
     if (returnedToken) {
       setCookie("risen_token", returnedToken);
       setIsAuthenticated(true);
-      setIsAdmin(checkAdminRole(returnedToken));
+      setIsAdmin(resolveAdminStatus(returnedToken, data.user));
 
       try {
-        const { data: meData } = await api.get("/Me");
-        setUser(meData);
-        setStats(meData.stats);
+        await refreshCurrentUser();
       } catch (e) {
         console.error("Failed to fetch user details after reset:", e);
       }
@@ -311,18 +325,7 @@ export const AuthProvider = ({ children }) => {
 
   const refreshStats = async () => {
     try {
-      const { data } = await api.get("/Me");
-      const { data: rankData } = await api
-        .get("/Leaderboards/my-rank")
-        .catch(() => ({ data: null }));
-
-      const combinedStats = { ...(data.stats || data) };
-      if (rankData) {
-        combinedStats.globalRank = rankData.rank || rankData;
-        if (rankData.rank) combinedStats.rank = rankData.rank;
-      }
-      setStats(combinedStats);
-      setUser(data);
+      await refreshCurrentUser();
     } catch (error) {
       console.error("Failed to refresh stats", error);
     }

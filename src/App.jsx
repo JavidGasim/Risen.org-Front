@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -27,7 +28,14 @@ import { useAuth } from './context/AuthContext';
 function App() {
   const { isAuthenticated, isAdmin } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isAdminRoute = location.pathname.startsWith('/admin');
+
+  useEffect(() => {
+    if (isAuthenticated && isAdmin && !isAdminRoute) {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, isAdmin, isAdminRoute, navigate]);
 
   return (
     <>
