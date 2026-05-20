@@ -77,6 +77,7 @@ export default function AdminLayout() {
         <div className="admin-sidebar-footer" style={{ padding: '0 24px', marginTop: 'auto' }}>
           <button
             onClick={logout}
+            className="admin-logout-button"
             style={{ 
               width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
               padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)',
