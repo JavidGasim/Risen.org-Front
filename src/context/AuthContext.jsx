@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
 
     const baseUrl = import.meta.env.VITE_API_URL
       ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "")
-      : "https://localhost:7053";
+      : "https://risen-org-back.onrender.com/api";
 
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(`${baseUrl}/notificationHub`, {
