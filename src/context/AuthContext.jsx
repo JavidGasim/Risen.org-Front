@@ -1,7 +1,7 @@
-import { createContext, useState, useEffect, useContext } from 'react';
-import api from '../utils/api';
-import { setCookie, getCookie, deleteCookie } from '../utils/cookie';
-import * as signalR from '@microsoft/signalr';
+import { createContext, useState, useEffect, useContext } from "react";
+import api from "../utils/api";
+import { setCookie, getCookie, deleteCookie } from "../utils/cookie";
+import * as signalR from "@microsoft/signalr";
 
 const AuthContext = createContext();
 
@@ -14,16 +14,27 @@ export const AuthProvider = ({ children }) => {
   const [signalRConnection, setSignalRConnection] = useState(null);
 
   const checkAdminRole = (token) => {
-    if (!token || typeof token !== 'string') return false;
+    if (!token || typeof token !== "string") return false;
     try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        window
+          .atob(base64)
+          .split("")
+          .map(function (c) {
+            return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+          })
+          .join(""),
+      );
       const parsed = JSON.parse(jsonPayload);
-      const role = parsed['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || parsed.role;
-      return role === 'Admin' || (Array.isArray(role) && role.includes('Admin'));
+      const role =
+        parsed[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ] || parsed.role;
+      return (
+        role === "Admin" || (Array.isArray(role) && role.includes("Admin"))
+      );
     } catch (e) {
       console.error(e);
       return false;
@@ -32,12 +43,14 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = getCookie('risen_token');
+      const token = getCookie("risen_token");
       if (token) {
         try {
           // Verify token and get user/stats from the flat response object
-          const { data } = await api.get('/Me');
-          const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
+          const { data } = await api.get("/Me");
+          const { data: rankData } = await api
+            .get("/Leaderboards/my-rank")
+            .catch(() => ({ data: null }));
           setUser(data);
 
           const combinedStats = { ...(data.stats || data) };
@@ -51,9 +64,12 @@ export const AuthProvider = ({ children }) => {
           setIsAdmin(checkAdminRole(token));
         } catch (error) {
           console.error("Auth check failed:", error);
-          // Only logout on definitive authentication failures (401/403). 
+          // Only logout on definitive authentication failures (401/403).
           // Ignore network errors/502s caused by the backend restarting.
-          if (error.response?.status === 401 || error.response?.status === 403) {
+          if (
+            error.response?.status === 401 ||
+            error.response?.status === 403
+          ) {
             logout();
           } else {
             setIsAuthenticated(true);
@@ -71,17 +87,18 @@ export const AuthProvider = ({ children }) => {
     if (!isAuthenticated) return;
 
     const baseUrl = import.meta.env.VITE_API_URL
-      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
-      : 'https://localhost:7053';
+      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "")
+      : "https://localhost:7053";
 
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(`${baseUrl}/notificationHub`, {
-        accessTokenFactory: () => getCookie('risen_token')
+        accessTokenFactory: () => getCookie("risen_token"),
       })
       .withAutomaticReconnect()
       .build();
 
-    connection.start()
+    connection
+      .start()
       .then(() => {
         console.log("SignalR Connected globally");
         setSignalRConnection(connection);
@@ -94,38 +111,53 @@ export const AuthProvider = ({ children }) => {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (signalRConnection && user) {
-      const handleRoleUpdated = (userId) => {
-        // If the backend says my role was updated, reload to get new access token/state
-        if (user.id === userId) {
-          console.log("My role changed! Reloading to update permissions...");
-          window.location.reload();
-        }
-      };
+    if (!signalRConnection || !user?.id) return;
 
-      signalRConnection.on("RoleUpdated", handleRoleUpdated);
+    const handleRoleUpdated = (data) => {
+      const updatedUserId = data.userId ?? data.UserId;
+      const newRole = data.role ?? data.Role;
 
-      return () => {
-        signalRConnection.off("RoleUpdated", handleRoleUpdated);
-      };
-    }
-  }, [signalRConnection, user]);
+      if (user.id === updatedUserId) {
+        console.log("Role changed:", newRole);
+        window.location.reload();
+      }
+    };
+
+    signalRConnection.on("UserRoleUpdated", handleRoleUpdated);
+
+    return () => {
+      signalRConnection.off("UserRoleUpdated", handleRoleUpdated);
+    };
+  }, [signalRConnection, user?.id]);
 
   const login = async (email, password) => {
-    const { data } = await api.post('/Auth/login', { Email: email, Password: password });
+    const { data } = await api.post("/Auth/login", {
+      Email: email,
+      Password: password,
+    });
 
-    const returnedToken = data.token || data.accessToken || data.access || (typeof data === 'string' ? data : null);
+    const returnedToken =
+      data.token ||
+      data.accessToken ||
+      data.access ||
+      (typeof data === "string" ? data : null);
 
-    if (data && (data.success === false || data.isSuccess === false || data.succeeded === false || data.isSucceeded === false)) {
-      throw new Error(data.message || 'Invalid credentials');
+    if (
+      data &&
+      (data.success === false ||
+        data.isSuccess === false ||
+        data.succeeded === false ||
+        data.isSucceeded === false)
+    ) {
+      throw new Error(data.message || "Invalid credentials");
     }
 
     if (!returnedToken) {
-      throw new Error(data.message || 'Invalid email or password');
+      throw new Error(data.message || "Invalid email or password");
     }
 
     const adminStatus = checkAdminRole(returnedToken);
-    setCookie('risen_token', returnedToken);
+    setCookie("risen_token", returnedToken);
     setIsAdmin(adminStatus);
 
     if (data.user) setUser(data.user);
@@ -136,11 +168,12 @@ export const AuthProvider = ({ children }) => {
 
     // Fetch stats right after login
     try {
-
       if (!isAuthenticated) return;
 
-      const { data: meData } = await api.get('/Me');
-      const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
+      const { data: meData } = await api.get("/Me");
+      const { data: rankData } = await api
+        .get("/Leaderboards/my-rank")
+        .catch(() => ({ data: null }));
       setUser(meData);
 
       const combinedStats = { ...(meData.stats || meData) };
@@ -156,21 +189,27 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register flow (OTP temporarily disabled)
-  const register = async (email, password, firstName, lastName, universityName) => {
+  const register = async (
+    email,
+    password,
+    firstName,
+    lastName,
+    universityName,
+  ) => {
     const payload = {
       Email: email,
       Password: password,
       FirstName: firstName,
       LastName: lastName,
-      UniversityName: universityName
+      UniversityName: universityName,
     };
-    const { data } = await api.post('/Auth/register', payload);
+    const { data } = await api.post("/Auth/register", payload);
 
     const returnedToken = data.token || data.accessToken || data.access;
     let adminStatus = false;
     if (returnedToken) {
       adminStatus = checkAdminRole(returnedToken);
-      setCookie('risen_token', returnedToken);
+      setCookie("risen_token", returnedToken);
       setIsAdmin(adminStatus);
     }
 
@@ -178,8 +217,10 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
 
     try {
-      const { data: meData } = await api.get('/Me');
-      const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
+      const { data: meData } = await api.get("/Me");
+      const { data: rankData } = await api
+        .get("/Leaderboards/my-rank")
+        .catch(() => ({ data: null }));
       setUser(meData);
 
       const combinedStats = { ...(meData.stats || meData) };
@@ -196,11 +237,14 @@ export const AuthProvider = ({ children }) => {
 
   // STEP 2 — OTP yoxla, hesab yarat (POST /Auth/verify-register)
   const verifyRegister = async (email, code) => {
-    const { data } = await api.post('/Auth/verify-register', { Email: email, Code: code });
+    const { data } = await api.post("/Auth/verify-register", {
+      Email: email,
+      Code: code,
+    });
 
     const returnedToken = data.token || data.accessToken || data.access;
     if (returnedToken) {
-      setCookie('risen_token', returnedToken);
+      setCookie("risen_token", returnedToken);
       setIsAdmin(checkAdminRole(returnedToken));
     }
 
@@ -208,8 +252,10 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
 
     try {
-      const { data: meData } = await api.get('/Me');
-      const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
+      const { data: meData } = await api.get("/Me");
+      const { data: rankData } = await api
+        .get("/Leaderboards/my-rank")
+        .catch(() => ({ data: null }));
       setUser(meData);
 
       const combinedStats = { ...(meData.stats || meData) };
@@ -225,7 +271,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    deleteCookie('risen_token');
+    deleteCookie("risen_token");
     setUser(null);
     setStats(null);
     setIsAuthenticated(false);
@@ -233,22 +279,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   const forgotPassword = async (email) => {
-    const { data } = await api.post('/Auth/forgot-password', { email });
+    const { data } = await api.post("/Auth/forgot-password", { email });
     return data;
   };
 
   const resetPassword = async (email, token, newPassword) => {
-    const { data } = await api.post('/Auth/reset-password', { email, token, newPassword });
+    const { data } = await api.post("/Auth/reset-password", {
+      email,
+      token,
+      newPassword,
+    });
 
     // Automatically log in the user if token is returned
     const returnedToken = data.token || data.accessToken || data.access;
     if (returnedToken) {
-      setCookie('risen_token', returnedToken);
+      setCookie("risen_token", returnedToken);
       setIsAuthenticated(true);
       setIsAdmin(checkAdminRole(returnedToken));
 
       try {
-        const { data: meData } = await api.get('/Me');
+        const { data: meData } = await api.get("/Me");
         setUser(meData);
         setStats(meData.stats);
       } catch (e) {
@@ -261,8 +311,10 @@ export const AuthProvider = ({ children }) => {
 
   const refreshStats = async () => {
     try {
-      const { data } = await api.get('/Me');
-      const { data: rankData } = await api.get('/Leaderboards/my-rank').catch(() => ({ data: null }));
+      const { data } = await api.get("/Me");
+      const { data: rankData } = await api
+        .get("/Leaderboards/my-rank")
+        .catch(() => ({ data: null }));
 
       const combinedStats = { ...(data.stats || data) };
       if (rankData) {
@@ -277,7 +329,24 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, stats, isAuthenticated, isAdmin, login, register, verifyRegister, logout, forgotPassword, resetPassword, refreshStats, loading, checkAdminRole, signalRConnection }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        stats,
+        isAuthenticated,
+        isAdmin,
+        login,
+        register,
+        verifyRegister,
+        logout,
+        forgotPassword,
+        resetPassword,
+        refreshStats,
+        loading,
+        checkAdminRole,
+        signalRConnection,
+      }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );
