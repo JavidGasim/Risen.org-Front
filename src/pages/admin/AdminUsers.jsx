@@ -62,12 +62,7 @@ export default function AdminUsers() {
 
         await api.post(
           `/admin/users/${userId}/roles`,
-          JSON.stringify("Admin"),
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }
+          "Admin"
         );
       }
 
