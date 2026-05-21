@@ -156,9 +156,11 @@ export const AuthProvider = ({ children }) => {
       if (user.id === updatedUserId) {
         console.log("Role changed:", newRole);
 
+
+        alert("token: " + data?.token);
         // 🔥 1. TOKEN UPDATE (ƏN VACİB)
         if (data?.token) {
-          setCookie("risen_token", data.token);          
+          setCookie("risen_token", data.token);
 
           // SignalR reconnect (token dəyişdiyi üçün vacibdir)
           await reconnectSignalR();
