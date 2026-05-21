@@ -51,30 +51,26 @@ export default function AdminUsers() {
   }, [signalRConnection]);
 
   const handleToggleAdmin = async (userId, currentIsAdmin) => {
+    // Optimistic update before API call
+    const updatedUsers = users.map(u =>
+      u.id === userId
+        ? { ...u, isAdmin: !currentIsAdmin }
+        : u
+    );
+    setUsers(updatedUsers);
 
     try {
-
       if (currentIsAdmin) {
-
         await api.delete(`/admin/users/${userId}/roles/Admin`);
-       await api.post(`/admin/users/${userId}/roles`, "\"Student\"");
+        await api.post(`/admin/users/${userId}/roles`, { role: "Student" });
       } else {
-
-        await api.post(`/admin/users/${userId}/roles`, "\"Admin\"");
+        await api.post(`/admin/users/${userId}/roles`, { role: "Admin" });
       }
-
-      // realtime update ucun optional optimistic update
-      setUsers(prev =>
-        prev.map(u =>
-          u.id === userId
-            ? { ...u, isAdmin: !currentIsAdmin }
-            : u
-        )
-      );
-
+      console.log("Role updated successfully");
     } catch (e) {
-
-      console.error(e);
+      console.error("Failed to update role:", e);
+      // Revert optimistic update on error
+      setUsers(users);
     }
   };
 
