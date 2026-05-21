@@ -57,15 +57,15 @@ export default function AdminUsers() {
       if (currentIsAdmin) {
 
         await api.delete(`/admin/users/${userId}/roles/Admin`);
-await api.post(
+        await api.post(
           `/admin/users/${userId}/roles`,
-          "Student"
+          { role: "Student" }
         );
       } else {
 
         await api.post(
           `/admin/users/${userId}/roles`,
-          "Admin"
+          { role: "Admin" }
         );
       }
 
