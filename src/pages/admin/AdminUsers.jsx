@@ -57,16 +57,10 @@ export default function AdminUsers() {
       if (currentIsAdmin) {
 
         await api.delete(`/admin/users/${userId}/roles/Admin`);
-        await api.post(
-          `/admin/users/${userId}/roles`,
-          { role: "Student" }
-        );
+       await api.post(`/admin/users/${userId}/roles`, "\"Student\"");
       } else {
 
-        await api.post(
-          `/admin/users/${userId}/roles`,
-          { role: "Admin" }
-        );
+        await api.post(`/admin/users/${userId}/roles`, "\"Admin\"");
       }
 
       // realtime update ucun optional optimistic update
