@@ -160,6 +160,9 @@ export const AuthProvider = ({ children }) => {
         if (data?.token) {
           setCookie("risen_token", data.token);
 
+          console.log("cookie: ", getCookie("risen_token"));
+          
+
           // SignalR reconnect (token dəyişdiyi üçün vacibdir)
           await reconnectSignalR();
         }
