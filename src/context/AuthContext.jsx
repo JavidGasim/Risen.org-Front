@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
       const parsed = JSON.parse(jsonPayload);
       const role =
         parsed[
-          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
         ] || parsed.role;
       return (
         role === "Admin" || (Array.isArray(role) && role.includes("Admin"))
@@ -55,13 +55,13 @@ export const AuthProvider = ({ children }) => {
     if (typeof value === "object") {
       return Boolean(
         value.isAdmin ||
-          value.IsAdmin ||
-          hasAdminRole(value.role) ||
-          hasAdminRole(value.Role) ||
-          hasAdminRole(value.roles) ||
-          hasAdminRole(value.Roles) ||
-          hasAdminRole(value.userRoles) ||
-          hasAdminRole(value.UserRoles),
+        value.IsAdmin ||
+        hasAdminRole(value.role) ||
+        hasAdminRole(value.Role) ||
+        hasAdminRole(value.roles) ||
+        hasAdminRole(value.Roles) ||
+        hasAdminRole(value.userRoles) ||
+        hasAdminRole(value.UserRoles),
       );
     }
 
@@ -151,27 +151,31 @@ export const AuthProvider = ({ children }) => {
 
     const handleRoleUpdated = async (data) => {
       const updatedUserId = data?.userId ?? data?.UserId ?? data;
-      const newRole = data?.role ?? data?.Role ?? data?.roles ?? data?.Roles;
+      const newRole = data?.role ?? data?.Role;
 
       if (user.id === updatedUserId) {
         console.log("Role changed:", newRole);
-        const roleSaysAdmin = hasAdminRole(newRole) || hasAdminRole(data);
 
-        if (roleSaysAdmin) {
-          setIsAdmin(true);
+        // 🔥 1. TOKEN UPDATE (ƏN VACİB)
+        if (data?.token) {
+          setCookie("risen_token", data.token);
+
+          // SignalR reconnect (token dəyişdiyi üçün vacibdir)
+          await reconnectSignalR();
         }
 
         try {
           const updatedUser = await refreshCurrentUser();
-          if (!roleSaysAdmin && !hasAdminRole(updatedUser)) {
-            setIsAdmin(false);
-          }
+
+          const isAdminNow =
+            hasAdminRole(newRole) || hasAdminRole(updatedUser);
+
+          setIsAdmin(isAdminNow);
         } catch (error) {
           console.error("Failed to refresh user after role update", error);
         }
       }
     };
-
     signalRConnection.on("UserRoleUpdated", handleRoleUpdated);
     signalRConnection.on("RoleUpdated", handleRoleUpdated);
 
