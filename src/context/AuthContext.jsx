@@ -178,12 +178,10 @@ export const AuthProvider = ({ children }) => {
         }
       }
     };
-    signalRConnection.on("UserRoleUpdated", handleRoleUpdated);
-    signalRConnection.on("RoleUpdated", handleRoleUpdated);
+    signalRConnection.on("RoleChanged", handleRoleUpdated);
 
     return () => {
-      signalRConnection.off("UserRoleUpdated", handleRoleUpdated);
-      signalRConnection.off("RoleUpdated", handleRoleUpdated);
+      signalRConnection.off("RoleChanged", handleRoleUpdated);
     };
   }, [signalRConnection, user?.id]);
 
