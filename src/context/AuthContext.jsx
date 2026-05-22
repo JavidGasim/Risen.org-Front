@@ -144,7 +144,10 @@ export const AuthProvider = ({ children }) => {
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(`${baseUrl}/notificationHub`, {
         accessTokenFactory: () => getCookie("risen_token"),
-        transport: signalR.HttpTransportType.LongPolling
+
+        transport:
+          signalR.HttpTransportType.WebSockets |
+          signalR.HttpTransportType.LongPolling
       })
       .withAutomaticReconnect()
       .build();
@@ -155,7 +158,7 @@ export const AuthProvider = ({ children }) => {
         console.log("SignalR Connected globally");
         setSignalRConnection(connection);
       })
-      .catch(console.error);
+      .catch(err => console.error("SIGNALR FAIL:", err));
 
     return () => {
       connection.stop();
