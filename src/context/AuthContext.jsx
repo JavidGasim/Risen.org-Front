@@ -137,23 +137,26 @@ export const AuthProvider = ({ children }) => {
         console.log("SignalR connected");
 
         // ROLE UPDATE
-        conn.on("RoleUpdated", async (data) => {
-          console.log("RoleUpdated:", data);
+        conn.on("RoleChanged", async (data) => {
+          console.log("RoleChanged:", data);
 
-          if (data?.token) {
-            setCookie("risen_token", data.token);
-
-            try {
-              await refreshCurrentUser();
-            } catch (err) {
-              console.error(err);
+          try {
+            // token varsa yenilə
+            if (data?.token) {
+              setCookie("risen_token", data.token);
             }
+
+            // user refresh et
+            await refreshCurrentUser();
+
+          } catch (err) {
+            console.error("Role update error:", err);
           }
         });
 
         // FORCE LOGOUT
         conn.on("ForceLogout", () => {
-          console.log("Force logout received");
+          console.log("ForceLogout received");
           logout();
         });
 
@@ -277,7 +280,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await stopSignalRConnection();
-    
+
     deleteCookie("risen_token");
     setUser(null);
     setStats(null);
