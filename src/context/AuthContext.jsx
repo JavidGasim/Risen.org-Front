@@ -92,6 +92,21 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  const reconnectSignalR = async () => {
+    if (!signalRConnection) return;
+
+    try {
+      await signalRConnection.stop();
+
+      await new Promise(r => setTimeout(r, 500));
+
+      await signalRConnection.start();
+
+    } catch (err) {
+      console.error("Reconnect failed", err);
+    }
+  };
+
   useEffect(() => {
     const initAuth = async () => {
       const token = getCookie("risen_token");
@@ -129,6 +144,7 @@ export const AuthProvider = ({ children }) => {
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(`${baseUrl}/notificationHub`, {
         accessTokenFactory: () => getCookie("risen_token"),
+        transport: signalR.HttpTransportType.LongPolling
       })
       .withAutomaticReconnect()
       .build();
@@ -190,20 +206,6 @@ export const AuthProvider = ({ children }) => {
       }
     };
   }, [signalRConnection, user?.id]);
-
-  const reconnectSignalR = async () => {
-    if (!signalRConnection) return;
-
-    try {
-      await signalRConnection.stop();
-
-      await signalRConnection.start();
-
-      console.log("SignalR reconnected with new token");
-    } catch (err) {
-      console.error("Reconnect failed", err);
-    }
-  };
 
   const login = async (email, password) => {
     const { data } = await api.post("/Auth/login", {
