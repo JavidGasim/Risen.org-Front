@@ -5,8 +5,9 @@ let connection = null;
 export const startSignalRConnection = async (token) => {
     if (connection) return connection;
 
-    const API_URL = import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "");
-
+    const API_URL =
+        import.meta.env.VITE_API_BASE_URL ||
+        "https://risen-org-back.onrender.com/api";
     connection = new signalR.HubConnectionBuilder()
         .withUrl(`${API_URL}/notificationHub`, {
             accessTokenFactory: () => token,
