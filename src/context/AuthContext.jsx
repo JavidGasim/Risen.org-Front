@@ -156,34 +156,54 @@ export const AuthProvider = ({ children }) => {
       if (user.id === updatedUserId) {
         console.log("Role changed:", newRole);
 
-
-        alert("token: " + data?.token);
-        // 🔥 1. TOKEN UPDATE (ƏN VACİB)
-        if (data?.token) {
-          setCookie("risen_token", data.token);
-
-          // SignalR reconnect (token dəyişdiyi üçün vacibdir)
-          await reconnectSignalR();
-        }
-
         try {
+          // 🔥 TOKEN UPDATE
+          if (data?.token) {
+            setCookie("risen_token", data.token);
+
+            // reconnect with NEW token
+            await reconnectSignalR();
+          }
+
+          // 🔥 USER REFRESH
           const updatedUser = await refreshCurrentUser();
 
-          const isAdminNow =
-            hasAdminRole(newRole) || hasAdminRole(updatedUser);
+          // 🔥 FORCE STATE UPDATE
+          setUser({ ...updatedUser });
 
-          setIsAdmin(isAdminNow);
+          // 🔥 ADMIN UPDATE
+          const adminStatus = resolveAdminStatus(
+            data?.token || getCookie("risen_token"),
+            updatedUser
+          );
+
+          setIsAdmin(adminStatus);
+
+          console.log("NEW ADMIN STATUS:", adminStatus);
+
         } catch (error) {
-          console.error("Failed to refresh user after role update", error);
+          console.error(
+            "Failed to refresh user after role update",
+            error
+          );
         }
       }
     };
-    signalRConnection.on("RoleChanged", handleRoleUpdated);
-
-    return () => {
-      signalRConnection.off("RoleChanged", handleRoleUpdated);
-    };
   }, [signalRConnection, user?.id]);
+
+  const reconnectSignalR = async () => {
+    if (!signalRConnection) return;
+
+    try {
+      await signalRConnection.stop();
+
+      await signalRConnection.start();
+
+      console.log("SignalR reconnected with new token");
+    } catch (err) {
+      console.error("Reconnect failed", err);
+    }
+  };
 
   const login = async (email, password) => {
     const { data } = await api.post("/Auth/login", {
