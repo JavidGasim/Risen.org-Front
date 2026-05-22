@@ -26,9 +26,25 @@ export default function AdminUsers() {
 
 
   const changeRole = async (id, role) => {
-    await api.post(`admin/users/${id}/roles`, `"${role}"`, {
-      headers: { "Content-Type": "application/json" },
-    });
+    // optimistic UI (immediate change)
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === id
+          ? {
+            ...u,
+            isAdmin: role === "Admin",
+            role: role,
+          }
+          : u
+      )
+    );
+
+    try {
+      await api.post(`/users/${id}/roles`, `"${role}"`);
+    } catch (err) {
+      console.error(err);
+      fetchUsers(); // fallback
+    }
   };
 
   const filteredUsers = (users || []).filter(user =>
