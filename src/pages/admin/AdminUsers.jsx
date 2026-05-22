@@ -26,7 +26,7 @@ export default function AdminUsers() {
 
 
   const changeRole = async (id, role) => {
-    await api.post(`/users/${id}/roles`, `"${role}"`, {
+    await api.post(`admin/users/${id}/roles`, `"${role}"`, {
       headers: { "Content-Type": "application/json" },
     });
   };
