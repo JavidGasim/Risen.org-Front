@@ -8,6 +8,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const { user: currentUser } = useAuth();
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -26,6 +27,11 @@ export default function AdminUsers() {
 
 
   const changeRole = async (id, role) => {
+    // Prevent changing own role
+    if (id === currentUser?.id) {
+      console.warn("Attempt to change own role blocked");
+      return;
+    }
     // optimistic UI (immediate change)
     setUsers((prev) =>
       prev.map((u) =>
@@ -149,8 +155,9 @@ export default function AdminUsers() {
                             <button
                               onClick={() => changeRole(user.id, "Admin")}
                               className="btn btn-primary"
-                              style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
-                              title="Make Admin"
+                              disabled={currentUser?.id === user.id}
+                              style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px', opacity: currentUser?.id === user.id ? 0.6 : 1 }}
+                              title={currentUser?.id === user.id ? "You cannot change your own role" : "Make Admin"}
                             >
                               <Shield size={14} /> Promote
                             </button>
@@ -158,8 +165,9 @@ export default function AdminUsers() {
                             <button
                               onClick={() => changeRole(user.id, "Student")}
                               className="btn btn-secondary"
-                              style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
-                              title="Remove Admin"
+                              disabled={currentUser?.id === user.id}
+                              style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px', opacity: currentUser?.id === user.id ? 0.6 : 1 }}
+                              title={currentUser?.id === user.id ? "You cannot change your own role" : "Remove Admin"}
                             >
                               <ShieldOff size={14} /> Demote
                             </button>
