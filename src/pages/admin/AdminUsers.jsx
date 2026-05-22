@@ -2,17 +2,11 @@ import { useState, useEffect } from 'react';
 import { Search, Shield, ShieldOff, MoreVertical, Trophy, Star, Activity, TrendingUp } from 'lucide-react';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
-import useSignalR from '../../hooks/useSignalR';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const { isAuthenticated } = useAuth();
-  const { connection } = useSignalR({
-    hubPath: '/notificationHub',
-    enabled: isAuthenticated,
-  });
 
   const fetchUsers = async () => {
 
@@ -39,21 +33,6 @@ export default function AdminUsers() {
     fetchUsers();
 
   }, []);
-
-  useEffect(() => {
-    if (!connection) return;
-
-    const handler = (data) => {
-      console.log("RoleChanged received:", data);
-      fetchUsers();
-    };
-
-    connection.on("RoleChanged", handler);
-
-    return () => {
-      connection.off("RoleChanged", handler);
-    };
-  }, [connection]);
 
   const handleToggleAdmin = async (userId, currentIsAdmin) => {
     try {

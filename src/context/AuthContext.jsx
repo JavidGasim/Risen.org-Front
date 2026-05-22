@@ -1,6 +1,10 @@
 import { createContext, useState, useEffect, useContext } from "react";
 import api from "../utils/api";
 import { setCookie, getCookie, deleteCookie } from "../utils/cookie";
+import {
+  startSignalRConnection,
+  stopSignalRConnection,
+} from "../services/signalrService";
 
 const AuthContext = createContext();
 
@@ -117,6 +121,55 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
+  useEffect(() => {
+    const token = getCookie("risen_token");
+
+    if (!token || !isAuthenticated) return;
+
+    let isMounted = true;
+
+    const connectSignalR = async () => {
+      try {
+        const conn = await startSignalRConnection(token);
+
+        if (!isMounted) return;
+
+        console.log("SignalR connected");
+
+        // ROLE UPDATE
+        conn.on("RoleUpdated", async (data) => {
+          console.log("RoleUpdated:", data);
+
+          if (data?.token) {
+            setCookie("risen_token", data.token);
+
+            try {
+              await refreshCurrentUser();
+            } catch (err) {
+              console.error(err);
+            }
+          }
+        });
+
+        // FORCE LOGOUT
+        conn.on("ForceLogout", () => {
+          console.log("Force logout received");
+          logout();
+        });
+
+      } catch (err) {
+        console.error("SignalR connection error:", err);
+      }
+    };
+
+    connectSignalR();
+
+    return () => {
+      isMounted = false;
+      stopSignalRConnection();
+    };
+  }, [isAuthenticated]);
+
   const login = async (email, password) => {
     const { data } = await api.post("/Auth/login", {
       Email: email,
@@ -222,7 +275,9 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await stopSignalRConnection();
+    
     deleteCookie("risen_token");
     setUser(null);
     setStats(null);
