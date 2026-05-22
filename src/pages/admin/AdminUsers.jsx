@@ -10,8 +10,12 @@ export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchUsers = useCallback(async () => {
-    const res = await api.get("/admin/users");
-    setUsers(res.data);
+    try {
+      const res = await api.get("/admin/users");
+      setUsers(res.data);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -27,7 +31,7 @@ export default function AdminUsers() {
     });
   };
 
-  const filteredUsers = users.filter(user =>
+  const filteredUsers = (users || []).filter(user =>
     user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
