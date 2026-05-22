@@ -151,13 +151,21 @@ export default function AdminUsers() {
                       </td>
                       <td style={{ padding: '16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                          {user.role !== "Admin" ? (
+                          {currentUser?.id === user.id ? (
+                            <button
+                              className="btn btn-muted"
+                              disabled
+                              style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '8px', opacity: 0.6 }}
+                              title="You cannot change your own role"
+                            >
+                              BLOCKED
+                            </button>
+                          ) : user.role !== "Admin" ? (
                             <button
                               onClick={() => changeRole(user.id, "Admin")}
                               className="btn btn-primary"
-                              disabled={currentUser?.id === user.id}
-                              style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px', opacity: currentUser?.id === user.id ? 0.6 : 1 }}
-                              title={currentUser?.id === user.id ? "You cannot change your own role" : "Make Admin"}
+                              style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
+                              title="Make Admin"
                             >
                               <Shield size={14} /> Promote
                             </button>
@@ -165,9 +173,8 @@ export default function AdminUsers() {
                             <button
                               onClick={() => changeRole(user.id, "Student")}
                               className="btn btn-secondary"
-                              disabled={currentUser?.id === user.id}
-                              style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px', opacity: currentUser?.id === user.id ? 0.6 : 1 }}
-                              title={currentUser?.id === user.id ? "You cannot change your own role" : "Remove Admin"}
+                              style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
+                              title="Remove Admin"
                             >
                               <ShieldOff size={14} /> Demote
                             </button>
