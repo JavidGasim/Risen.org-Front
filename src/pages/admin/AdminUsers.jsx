@@ -38,48 +38,25 @@ export default function AdminUsers() {
   useEffect(() => {
     if (!signalRConnection) return;
 
-    const handler = () => {
-      console.log("Role updated realtime - refreshing list");
+    const handler = (data) => {
+      console.log("RoleChanged received:", data);
       fetchUsers();
     };
 
-    signalRConnection.on("RoleUpdated", handler);
+    signalRConnection.on("RoleChanged", handler);
 
     return () => {
-      signalRConnection.off("RoleUpdated", handler);
+      signalRConnection.off("RoleChanged", handler);
     };
   }, [signalRConnection]);
 
   const handleToggleAdmin = async (userId, currentIsAdmin) => {
-
     try {
-
-      if (currentIsAdmin) {
-
-        await api.delete(`/admin/users/${userId}/roles/Admin`);
-await api.post(
-          `/admin/users/${userId}/roles`,
-          "Student"
-        );
-      } else {
-
-        await api.post(
-          `/admin/users/${userId}/roles`,
-          "Admin"
-        );
-      }
-
-      // realtime update ucun optional optimistic update
-      setUsers(prev =>
-        prev.map(u =>
-          u.id === userId
-            ? { ...u, isAdmin: !currentIsAdmin }
-            : u
-        )
+      await api.post(
+        `/admin/users/${userId}/roles`,
+        currentIsAdmin ? "Student" : "Admin"
       );
-
     } catch (e) {
-
       console.error(e);
     }
   };
