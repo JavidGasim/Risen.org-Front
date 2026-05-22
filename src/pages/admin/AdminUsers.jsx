@@ -40,7 +40,7 @@ export default function AdminUsers() {
     );
 
     try {
-      await api.post(`/users/${id}/roles`, `"${role}"`);
+      await api.post(`admin/users/${id}/roles`, `"${role}"`);
     } catch (err) {
       console.error(err);
       fetchUsers(); // fallback
