@@ -145,7 +145,7 @@ export default function AdminUsers() {
                       </td>
                       <td style={{ padding: '16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                          {!user.isAdmin ? (
+                          {user.role !== "Admin" ? (
                             <button
                               onClick={() => changeRole(user.id, "Admin")}
                               className="btn btn-primary"
