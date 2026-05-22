@@ -1,7 +1,6 @@
 import { createContext, useState, useEffect, useContext } from "react";
 import api from "../utils/api";
 import { setCookie, getCookie, deleteCookie } from "../utils/cookie";
-import * as signalR from "@microsoft/signalr";
 
 const AuthContext = createContext();
 
@@ -11,7 +10,6 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [signalRConnection, setSignalRConnection] = useState(null);
 
   const checkAdminRole = (token) => {
     if (!token || typeof token !== "string") return false;
@@ -92,21 +90,6 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const reconnectSignalR = async () => {
-    if (!signalRConnection) return;
-
-    try {
-      await signalRConnection.stop();
-
-      await new Promise(r => setTimeout(r, 500));
-
-      await signalRConnection.start();
-
-    } catch (err) {
-      console.error("Reconnect failed", err);
-    }
-  };
-
   useEffect(() => {
     const initAuth = async () => {
       const token = getCookie("risen_token");
@@ -133,82 +116,6 @@ export const AuthProvider = ({ children }) => {
 
     initAuth();
   }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const baseUrl = import.meta.env.VITE_API_URL
-      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "")
-      : "https://risen-org-back.onrender.com";
-
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${baseUrl}/notificationHub`, {
-        accessTokenFactory: () => getCookie("risen_token"),
-
-        transport:
-          signalR.HttpTransportType.WebSockets |
-          signalR.HttpTransportType.LongPolling
-      })
-      .withAutomaticReconnect()
-      .build();
-
-    connection
-      .start()
-      .then(() => {
-        console.log("SignalR Connected globally");
-        setSignalRConnection(connection);
-      })
-      .catch(err => console.error("SIGNALR FAIL:", err));
-
-    return () => {
-      connection.stop();
-    };
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (!signalRConnection || !user?.id) return;
-
-    const handleRoleUpdated = async (data) => {
-      const updatedUserId = data?.userId ?? data?.UserId ?? data;
-      const newRole = data?.role ?? data?.Role;
-
-      if (user.id === updatedUserId) {
-        console.log("Role changed:", newRole);
-
-        try {
-          // 🔥 TOKEN UPDATE
-          if (data?.token) {
-            setCookie("risen_token", data.token);
-
-            // reconnect with NEW token
-            await reconnectSignalR();
-          }
-
-          // 🔥 USER REFRESH
-          const updatedUser = await refreshCurrentUser();
-
-          // 🔥 FORCE STATE UPDATE
-          setUser({ ...updatedUser });
-
-          // 🔥 ADMIN UPDATE
-          const adminStatus = resolveAdminStatus(
-            data?.token || getCookie("risen_token"),
-            updatedUser
-          );
-
-          setIsAdmin(adminStatus);
-
-          console.log("NEW ADMIN STATUS:", adminStatus);
-
-        } catch (error) {
-          console.error(
-            "Failed to refresh user after role update",
-            error
-          );
-        }
-      }
-    };
-  }, [signalRConnection, user?.id]);
 
   const login = async (email, password) => {
     const { data } = await api.post("/Auth/login", {
@@ -376,7 +283,6 @@ export const AuthProvider = ({ children }) => {
         refreshStats,
         loading,
         checkAdminRole,
-        signalRConnection,
       }}
     >
       {!loading && children}
