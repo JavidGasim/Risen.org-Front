@@ -1,48 +1,30 @@
-import { useState, useEffect } from 'react';
 import { Search, Shield, ShieldOff, MoreVertical, Trophy, Star, Activity, TrendingUp } from 'lucide-react';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
+import { useEffect, useState, useCallback } from "react";
+import { useAdminSignalR } from "../../hooks/useAdminSignalR";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchUsers = async () => {
-
-    setLoading(true);
-
-    try {
-
-      const { data } = await api.get('/admin/users?limit=50');
-
-      setUsers(data);
-
-    } catch (error) {
-
-      console.error(error);
-
-    } finally {
-
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-
-    fetchUsers();
-
+  const fetchUsers = useCallback(async () => {
+    const res = await api.get("/admin/users");
+    setUsers(res.data);
   }, []);
 
-  const handleToggleAdmin = async (userId, currentIsAdmin) => {
-    try {
-      await api.post(
-        `/admin/users/${userId}/roles`,
-        currentIsAdmin ? "Student" : "Admin"
-      );
-    } catch (e) {
-      console.error(e);
-    }
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  useAdminSignalR({ setUsers, fetchUsers });
+
+
+  const changeRole = async (id, role) => {
+    await api.post(`/users/${id}/roles`, `"${role}"`, {
+      headers: { "Content-Type": "application/json" },
+    });
   };
 
   const filteredUsers = users.filter(user =>
@@ -146,7 +128,7 @@ export default function AdminUsers() {
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                           {!user.isAdmin ? (
                             <button
-                              onClick={() => handleToggleAdmin(user.id, false)}
+                              onClick={() => changeRole(user.id, "Admin")}
                               className="btn btn-primary"
                               style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
                               title="Make Admin"
@@ -155,7 +137,7 @@ export default function AdminUsers() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleToggleAdmin(user.id, true)}
+                              onClick={() => changeRole(user.id, "Student")}
                               className="btn btn-secondary"
                               style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
                               title="Remove Admin"
