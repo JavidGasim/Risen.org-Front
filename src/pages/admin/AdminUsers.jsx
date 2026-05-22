@@ -32,8 +32,7 @@ export default function AdminUsers() {
         u.id === id
           ? {
             ...u,
-            isAdmin: role === "Admin",
-            role: role,
+            role: role
           }
           : u
       )
