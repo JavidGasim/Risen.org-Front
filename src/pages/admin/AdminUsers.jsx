@@ -26,12 +26,23 @@ export default function AdminUsers() {
   useAdminSignalR({ setUsers, fetchUsers });
 
 
+  const isProtectedAdmin = (user) =>
+    user?.email?.toLowerCase() === "admin@gmail.com";
+
   const changeRole = async (id, role) => {
-    // Prevent changing own role
+    const targetUser = users.find((u) => u.id === id);
+    if (!targetUser) return;
+
     if (id === currentUser?.id) {
       console.warn("Attempt to change own role blocked");
       return;
     }
+
+    if (isProtectedAdmin(targetUser)) {
+      console.warn("Attempt to change protected admin role blocked");
+      return;
+    }
+
     // optimistic UI (immediate change)
     setUsers((prev) =>
       prev.map((u) =>
@@ -151,12 +162,12 @@ export default function AdminUsers() {
                       </td>
                       <td style={{ padding: '16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                          {currentUser?.id === user.id ? (
+                          {(currentUser?.id === user.id || isProtectedAdmin(user)) ? (
                             <button
                               className="btn btn-muted"
                               disabled
                               style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '8px', opacity: 0.6 }}
-                              title="You cannot change your own role"
+                              title={isProtectedAdmin(user) ? "This admin cannot be changed" : "You cannot change your own role"}
                             >
                               BLOCKED
                             </button>
