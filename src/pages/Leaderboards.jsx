@@ -1,19 +1,35 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { Trophy, Globe, GraduationCap, AlertTriangle, Disc, Target, Zap } from 'lucide-react';
+import { Trophy, Globe, GraduationCap, AlertTriangle, Disc, Target, Zap, BookOpen } from 'lucide-react';
 
 const Leaderboards = () => {
   const { user } = useAuth();
   const [globalData, setGlobalData] = useState([]);
   const [uniData, setUniData] = useState([]);
   const [leagueData, setLeagueData] = useState([]);
+  const [subjectData, setSubjectData] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [selectedSubjectCode, setSelectedSubjectCode] = useState('');
   const [myRank, setMyRank] = useState(null);
   const [activeTab, setActiveTab] = useState('global');
   const [loading, setLoading] = useState(true);
+  const [subjectLoading, setSubjectLoading] = useState(false);
   const [error, setError] = useState('');
+  const [subjectError, setSubjectError] = useState('');
 
   useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const res = await api.get('/Subjects');
+        const list = res.data?.subjects || res.data?.items || res.data || [];
+        setSubjects(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.warn('Subjects list failed to load', err);
+        setSubjects([]);
+      }
+    };
+
     const fetchLeaderboards = async () => {
       setLoading(true);
       setError('');
@@ -41,10 +57,47 @@ const Leaderboards = () => {
         setLoading(false);
       }
     };
+
+    fetchSubjects();
     fetchLeaderboards();
   }, []);
 
-  const dataToDisplay = activeTab === 'global' ? globalData : (activeTab === 'university' ? uniData : leagueData);
+  useEffect(() => {
+    const fetchSubjectLeaderboard = async () => {
+      if (!selectedSubjectCode) {
+        setSubjectData([]);
+        setSubjectError('');
+        return;
+      }
+
+      setSubjectLoading(true);
+      setSubjectError('');
+      try {
+        const res = await api.get(`/Leaderboards/subject/${selectedSubjectCode}`, { params: { limit: 50 } });
+        const items = res.data?.items || res.data || [];
+        setSubjectData(Array.isArray(items) ? items : []);
+      } catch (err) {
+        console.error('Subject leaderboard error', err);
+        setSubjectError('Unable to load rankings for the selected discipline.');
+        setSubjectData([]);
+      } finally {
+        setSubjectLoading(false);
+      }
+    };
+
+    fetchSubjectLeaderboard();
+  }, [selectedSubjectCode]);
+
+  const dataToDisplay = activeTab === 'global'
+    ? globalData
+    : activeTab === 'university'
+      ? uniData
+      : activeTab === 'league'
+        ? leagueData
+        : subjectData;
+
+  const activeError = activeTab === 'subject' ? subjectError : error;
+  const activeLoading = activeTab === 'subject' ? subjectLoading : loading;
 
   const getRankColor = (rank) => {
     if (rank === 1) return '#F59E0B'; // Gold
@@ -114,12 +167,50 @@ const Leaderboards = () => {
         >
           <Zap size={20} color={activeTab === 'league' ? '#F59E0B' : '#94A3B8'} /> {user?.league || 'League'}
         </button>
+        <button 
+          onClick={() => setActiveTab('subject')}
+          style={{ 
+            display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 32px', 
+            borderRadius: '16px', border: activeTab === 'subject' ? '1px solid #6366F1' : '1px solid rgba(255,255,255,0.05)',
+            background: activeTab === 'subject' ? 'rgba(99,102,241,0.1)' : 'rgba(15,23,42,0.4)',
+            color: activeTab === 'subject' ? '#fff' : '#94A3B8', cursor: 'pointer', transition: 'all 0.2s',
+            fontWeight: 700, fontSize: '1rem', boxShadow: activeTab === 'subject' ? '0 0 30px rgba(99,102,241,0.2)' : 'none'
+          }}
+        >
+          <BookOpen size={20} color={activeTab === 'subject' ? '#6366F1' : '#94A3B8'} /> Subject
+        </button>
       </div>
 
-      {error ? (
+      {activeTab === 'subject' && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }} className="slide-up">
+          <select
+            value={selectedSubjectCode}
+            onChange={(e) => setSelectedSubjectCode(e.target.value)}
+            style={{
+              minWidth: '280px',
+              padding: '14px 18px',
+              borderRadius: '16px',
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(15,23,42,0.9)',
+              color: '#F8FAFC',
+              fontSize: '1rem'
+            }}
+          >
+            <option value="">Filter by subject</option>
+            {subjects.map((sub) => {
+              const subjectKey = sub.code || sub.id || sub.subjectCode || sub.subjectId;
+              return (
+                <option key={subjectKey} value={subjectKey}>{sub.name || sub.title || subjectKey}</option>
+              );
+            })}
+          </select>
+        </div>
+      )}
+
+      {activeError ? (
         <div style={{ padding: '40px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#FCA5A5', borderRadius: '24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
           <AlertTriangle size={48} />
-          <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{error}</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{activeError}</div>
         </div>
       ) : (
         <div className="premium-card slide-up" key={activeTab} style={{ padding: 0, overflow: 'hidden' }}>
@@ -131,46 +222,58 @@ const Leaderboards = () => {
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {dataToDisplay.map((u) => (
-              <div 
-                key={u.userId} 
-                style={{ 
-                  display: 'grid', gridTemplateColumns: '80px 1fr 200px 140px', gap: '20px', 
-                  padding: '24px 32px', alignItems: 'center',
-                  borderBottom: '1px solid rgba(255,255,255,0.03)',
-                  background: getRankBackground(u.rank),
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = getRankBackground(u.rank); }}
-              >
-                <div style={{ fontWeight: 900, fontSize: '1.4rem', color: getRankColor(u.rank), fontStyle: 'italic' }}>
-                  #{u.rank}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#818CF8', fontWeight: 800, fontSize: '1.2rem' }}>
-                    {(u.displayName || 'U')[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#F8FAFC' }}>{u.displayName}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                       <Target size={12} /> {u.universityName || 'Risen Engineer'}
+            {activeLoading ? (
+              <div className="flex-center" style={{ minHeight: '240px', flexDirection: 'column', gap: '20px', padding: '40px' }}>
+                <Disc size={36} color="#6366F1" className="animate-spin" style={{ animation: 'spin 1.5s linear infinite' }} />
+                <div style={{ color: '#94A3B8', fontSize: '1rem' }}>{activeTab === 'subject' ? 'Loading subject rankings...' : 'Updating rankings...'}</div>
+              </div>
+            ) : (
+              <>
+                {dataToDisplay.map((u) => (
+                  <div 
+                    key={u.userId || u.id}
+                    style={{ 
+                      display: 'grid', gridTemplateColumns: '80px 1fr 200px 140px', gap: '20px', 
+                      padding: '24px 32px', alignItems: 'center',
+                      borderBottom: '1px solid rgba(255,255,255,0.03)',
+                      background: getRankBackground(u.rank),
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = getRankBackground(u.rank); }}
+                  >
+                    <div style={{ fontWeight: 900, fontSize: '1.4rem', color: getRankColor(u.rank), fontStyle: 'italic' }}>
+                      #{u.rank}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#818CF8', fontWeight: 800, fontSize: '1.2rem' }}>
+                        {(u.displayName || 'U')[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#F8FAFC' }}>{u.displayName}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Target size={12} /> {u.universityName || 'Risen Engineer'}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ fontWeight: 600, color: '#94A3B8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {u.league || 'Rookie'}
+                    </div>
+                    <div style={{ textAlign: 'right', color: '#10B981', fontWeight: 800, fontSize: '1.2rem' }}>
+                      {u.totalXp?.toLocaleString?.() ?? u.totalXp}
                     </div>
                   </div>
-                </div>
-                <div style={{ fontWeight: 600, color: '#94A3B8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  {u.league || 'Rookie'}
-                </div>
-                <div style={{ textAlign: 'right', color: '#10B981', fontWeight: 800, fontSize: '1.2rem' }}>
-                  {u.totalXp.toLocaleString()}
-                </div>
-              </div>
-            ))}
-            
+                ))}
+              </>
+            )}
             {dataToDisplay.length === 0 && (
               <div style={{ padding: '80px 40px', textAlign: 'center', color: '#64748B' }}>
                 <Globe size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
-                <div style={{ fontSize: '1.1rem' }}>No rankings available in this sector.</div>
+                <div style={{ fontSize: '1.1rem' }}>
+                  {activeTab === 'subject' && !selectedSubjectCode
+                    ? 'Select a subject to view the subject-specific leaderboard.'
+                    : 'No rankings available in this sector.'}
+                </div>
               </div>
             )}
           </div>
