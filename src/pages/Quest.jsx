@@ -20,6 +20,9 @@ const Quest = () => {
   const isPremiumUser = user?.plan === 'Premium';
   const [quests, setQuests] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [dailyLimit, setDailyLimit] = useState(null);
+  const [completedToday, setCompletedToday] = useState(null);
+  const [remainingToday, setRemainingToday] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('all');
@@ -31,9 +34,14 @@ const Quest = () => {
           api.get('/QuestsFeed/today'),
           api.get('/Subjects')
         ]);
-
-        const qList = qRes.data?.items || [];
+          // Support both array responses and the wrapped object shape
+          const qList = qRes.data?.items || (Array.isArray(qRes.data) ? qRes.data : qRes.data || []);
         const sList = sRes.data?.subjects || sRes.data?.items || sRes.data || [];
+
+          // Read daily stats if present
+          setDailyLimit(qRes.data?.dailyLimit ?? qRes.data?.daily_limit ?? (Array.isArray(qRes.data) ? qRes.data.length : null));
+          setCompletedToday(qRes.data?.completedToday ?? qRes.data?.completed_today ?? null);
+          setRemainingToday(qRes.data?.remainingToday ?? qRes.data?.remaining_today ?? null);
 
         setQuests(qList);
         setSubjects(sList);
@@ -100,6 +108,11 @@ const Quest = () => {
 
   const completed = quests.filter(q => q.isCompletedToday || q.isCompleted || q.alreadyCompletedEver || q.isSolved || q.is_solved).length;
 
+  // Determine progress numbers (prefer API-provided stats when available)
+  const progressCompleted = completedToday ?? completed ?? (quests.length - activeQuests.length);
+  const progressTotal = dailyLimit ?? (quests.length || 0);
+  const progressRemaining = remainingToday ?? (progressTotal - progressCompleted);
+
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }} className="fade-in">
       <style>{`
@@ -157,10 +170,11 @@ const Quest = () => {
         </div>
 
         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end' }}>
-          <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', padding: '14px 24px', borderRadius: '16px' }}>
-            <div style={{ color: '#10B981', fontSize: '1.8rem', fontWeight: 800, lineHeight: 1 }}>{quests.length - activeQuests.length}/{quests.length}</div>
-            <div style={{ color: '#64748B', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px' }}>Daily Progress</div>
-          </div>
+            <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', padding: '14px 24px', borderRadius: '16px' }}>
+              <div style={{ color: '#10B981', fontSize: '1.8rem', fontWeight: 800, lineHeight: 1 }}>{progressCompleted}/{progressTotal}</div>
+              <div style={{ color: '#64748B', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px' }}>Daily Progress</div>
+              <div style={{ color: '#64748B', fontSize: '0.75rem', marginTop: '6px' }}>{progressRemaining} remaining</div>
+            </div>
           <button 
             className="btn btn-outline" 
             onClick={() => navigate('/quest/completed')}
