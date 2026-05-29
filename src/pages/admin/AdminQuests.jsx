@@ -105,21 +105,7 @@ export default function AdminQuests() {
         return;
       }
 
-      // Transform the form data to match API expectations
-      const payload = {
-        questionText: formData.questionText,
-        description: formData.description,
-        difficulty: formData.difficulty,
-        subjectCode: formData.subjectCode,
-        baseXp: formData.baseXp,
-        isPremiumOnly: formData.isPremiumOnly,
-        options: formData.options.map((text, index) => ({
-          text: text,
-          isCorrect: index === formData.correctOptionIndex
-        }))
-      };
-
-      await api.post('/admin/quests', payload);
+      await api.post('/admin/quests', formData);
       handleCloseModal();
       fetchQuests();
     } catch (error) {
