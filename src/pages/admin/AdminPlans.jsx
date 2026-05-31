@@ -154,7 +154,7 @@ export default function AdminPlans() {
     try {
       if (editingEntitlementId) {
         await api.put(
-          `/admin/plans/${selectedPlanId}/entitlements/${editingEntitlementId}`,
+          `/admin/plans/${selectedPlanId}`,
           entitlementFormData
         );
       } else {
