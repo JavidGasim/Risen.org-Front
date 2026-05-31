@@ -43,7 +43,7 @@ export default function AdminPlans() {
   const fetchEntitlements = async (planId) => {
     setLoadingEntitlements(prev => ({ ...prev, [planId]: true }));
     try {
-      const { data } = await api.get(`/admin/plans/${planId}/entitlements`);
+      const { data } = await api.get(`/admin/plans/${planId}`);
       setPlanEntitlements(prev => ({ ...prev, [planId]: data }));
     } catch (error) {
       console.error("Failed to fetch entitlements", error);

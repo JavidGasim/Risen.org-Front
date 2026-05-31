@@ -26,7 +26,7 @@ const Quest = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('all');
-
+ 
   useEffect(() => {
     const fetchData = async () => {
       try {
