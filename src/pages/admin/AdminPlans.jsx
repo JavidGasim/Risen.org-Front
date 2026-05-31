@@ -31,7 +31,7 @@ export default function AdminPlans() {
     setLoading(true);
     try {
       const { data } = await api.get('/admin/plans');
-      const sorted = data.sort((a, b) => a.code - b.code);
+      const sorted = data.sort((a, b) => a.id.localeCompare(b.id));
       setPlans(sorted);
     } catch (error) {
       console.error("Failed to fetch plans", error);
