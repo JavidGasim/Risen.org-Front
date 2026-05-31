@@ -252,6 +252,68 @@ export default function AdminPlans() {
                       <tr key={`entitlements-${p.id}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}>
                         <td colSpan={4} style={{ padding: '24px' }}>
                           <div style={{ marginLeft: '20px' }}>
+                            {/* Plan Properties Section */}
+                            <div style={{ marginBottom: '32px' }}>
+                              <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'white', marginBottom: '16px' }}>Plan Properties</h3>
+                              <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                  <thead>
+                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                      <th style={{ padding: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: '500', textAlign: 'left', fontSize: '12px' }}>Property</th>
+                                      <th style={{ padding: '12px', color: 'rgba(255,255,255,0.6)', fontWeight: '500', textAlign: 'left', fontSize: '12px' }}>Value</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                      <td style={{ padding: '12px', color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>Code</td>
+                                      <td style={{ padding: '12px', color: 'rgba(255,255,255,0.9)', fontFamily: 'monospace', fontSize: '12px' }}>{p.code}</td>
+                                    </tr>
+                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                      <td style={{ padding: '12px', color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>Name</td>
+                                      <td style={{ padding: '12px', color: 'rgba(255,255,255,0.9)', fontSize: '12px' }}>{p.name}</td>
+                                    </tr>
+                                    {p.dailyQuestLimit !== undefined && (
+                                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>Daily Quest Limit</td>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.9)', fontFamily: 'monospace', fontSize: '12px' }}>{p.dailyQuestLimit}</td>
+                                      </tr>
+                                    )}
+                                    {p.allowAdvancedQuests !== undefined && (
+                                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>Allow Advanced Quests</td>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.9)', fontFamily: 'monospace', fontSize: '12px' }}>{String(p.allowAdvancedQuests)}</td>
+                                      </tr>
+                                    )}
+                                    {p.xpMultiplier !== undefined && (
+                                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>XP Multiplier</td>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.9)', fontFamily: 'monospace', fontSize: '12px' }}>{p.xpMultiplier}x</td>
+                                      </tr>
+                                    )}
+                                    {p.description && (
+                                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>Description</td>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.9)', fontSize: '12px' }}>{p.description}</td>
+                                      </tr>
+                                    )}
+                                    {p.createdAtUtc && (
+                                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>Created</td>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.9)', fontFamily: 'monospace', fontSize: '12px' }}>{new Date(p.createdAtUtc).toLocaleString()}</td>
+                                      </tr>
+                                    )}
+                                    {p.updatedAtUtc && (
+                                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>Updated</td>
+                                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.9)', fontFamily: 'monospace', fontSize: '12px' }}>{new Date(p.updatedAtUtc).toLocaleString()}</td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+
+                            {/* Plan Entitlements Section */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                               <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'white' }}>Plan Entitlements (Features)</h3>
                               <button
