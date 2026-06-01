@@ -11,7 +11,11 @@ export default function AdminPlans() {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     code: '',
-    name: ''
+    name: '',
+    dailyQuestLimit: '',
+    allowAdvancedQuests: false,
+    xpMultiplier: 1,
+    description: ''
   });
 
   // Entitlement State
@@ -63,11 +67,22 @@ export default function AdminPlans() {
       setEditingId(plan.id);
       setFormData({
         code: plan.code?.toString() || '',
-        name: plan.name || ''
+        name: plan.name || '',
+        dailyQuestLimit: plan.dailyQuestLimit ?? '',
+        allowAdvancedQuests: plan.allowAdvancedQuests ?? false,
+        xpMultiplier: plan.xpMultiplier ?? 1,
+        description: plan.description || ''
       });
     } else {
       setEditingId(null);
-      setFormData({ code: 'Free', name: '' });
+      setFormData({ 
+        code: 'Free', 
+        name: '',
+        dailyQuestLimit: '',
+        allowAdvancedQuests: false,
+        xpMultiplier: 1,
+        description: ''
+      });
     }
     setIsModalOpen(true);
   };
@@ -75,7 +90,14 @@ export default function AdminPlans() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingId(null);
-    setFormData({ code: '', name: '' });
+    setFormData({ 
+      code: '', 
+      name: '',
+      dailyQuestLimit: '',
+      allowAdvancedQuests: false,
+      xpMultiplier: 1,
+      description: ''
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -393,7 +415,7 @@ export default function AdminPlans() {
           background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-          <div className="glass-panel admin-modal" style={{ width: '100%', maxWidth: '400px', padding: '32px', borderRadius: '24px', position: 'relative' }}>
+          <div className="glass-panel admin-modal" style={{ width: '100%', maxWidth: '550px', padding: '32px', borderRadius: '24px', position: 'relative' }}>
             <button
               onClick={handleCloseModal}
               style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
@@ -423,6 +445,38 @@ export default function AdminPlans() {
                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
                   Must precisely match a C# PlanCode enum literal.
                 </p>
+              </div>
+              <div>
+                <label className="form-label">Description</label>
+                <textarea
+                  className="form-control" rows="2"
+                  value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="e.g. Free plan with basic features"
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+              <div>
+                <label className="form-label">Daily Quest Limit</label>
+                <input
+                  type="number" className="form-control"
+                  value={formData.dailyQuestLimit} onChange={(e) => setFormData({ ...formData, dailyQuestLimit: e.target.value ? parseInt(e.target.value) : '' })}
+                  placeholder="e.g. 5"
+                />
+              </div>
+              <div>
+                <label className="form-label">XP Multiplier</label>
+                <input
+                  type="number" className="form-control" step="0.1"
+                  value={formData.xpMultiplier} onChange={(e) => setFormData({ ...formData, xpMultiplier: parseFloat(e.target.value) || 1 })}
+                  placeholder="e.g. 1.5"
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <input
+                  type="checkbox" id="allowAdvancedQuests" className="form-control" style={{ width: 'auto', height: '20px', width: '20px', cursor: 'pointer' }}
+                  checked={formData.allowAdvancedQuests} onChange={(e) => setFormData({ ...formData, allowAdvancedQuests: e.target.checked })}
+                />
+                <label htmlFor="allowAdvancedQuests" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>Allow Advanced Quests</label>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
