@@ -17,6 +17,7 @@ export default function AdminPlans() {
     xpMultiplier: 1,
     description: ''
   });
+  const isEditing = Boolean(editingId);
 
   // Entitlement State
   const [expandedPlanId, setExpandedPlanId] = useState(null);
@@ -431,6 +432,7 @@ export default function AdminPlans() {
                 <label className="form-label">Plan Name *</label>
                 <input
                   type="text" className="form-control" required
+                  disabled={isEditing}
                   value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Free Tier"
                 />
@@ -439,12 +441,18 @@ export default function AdminPlans() {
                 <label className="form-label">Plan Code *</label>
                 <input
                   type="text" className="form-control" required
+                  disabled={isEditing}
                   value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                   placeholder="e.g. Free, Premium"
                 />
                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
                   Must precisely match a C# PlanCode enum literal.
                 </p>
+                {isEditing && (
+                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
+                    Plan name and plan code cannot be changed on existing plans.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="form-label">Description</label>
