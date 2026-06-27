@@ -54,6 +54,7 @@ const Navbar = () => {
             {[
               { to: '/dashboard', icon: <Compass size={18} />, label: 'Dashboard' },
               { to: '/subjects', icon: <Zap size={18} />, label: 'Subjects' },
+              { to: '/posts', icon: <Heart size={18} />, label: 'Community' },
               { to: '/quest', icon: <Target size={18} />, label: 'Quests' },
               { to: '/leaderboards', icon: <Trophy size={18} />, label: 'Leaderboards' },
               { to: '/pricing', icon: <Sparkles size={18} />, label: 'Upgrade', color: '#F59E0B' },

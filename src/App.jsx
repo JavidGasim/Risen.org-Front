@@ -13,6 +13,7 @@ import CompletedQuests from './pages/CompletedQuests';
 import QuestDetail from './pages/QuestDetail';
 import Leaderboards from './pages/Leaderboards';
 import Pricing from './pages/Pricing';
+import Posts from './pages/Posts';
 import Profile from './pages/Profile';
 import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -52,6 +53,7 @@ function App() {
           {/* Protected Routes */}
           <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/subjects" element={isAuthenticated ? <Subjects /> : <Navigate to="/login" />} />
+          <Route path="/posts" element={isAuthenticated ? <Posts /> : <Navigate to="/login" />} />
           <Route path="/quest" element={isAuthenticated ? <Quest /> : <Navigate to="/login" />} />
           <Route path="/quest/completed" element={isAuthenticated ? <CompletedQuests /> : <Navigate to="/login" />} />
           <Route path="/quest/:id" element={isAuthenticated ? <QuestDetail /> : <Navigate to="/login" />} />
