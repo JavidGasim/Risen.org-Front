@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import { 
-  Heart, MessageCircle, Send, Trash2, ThumbUp, Loader2, ArrowRight
+  Heart, MessageCircle, Send, Trash2, ThumbsUp, Loader2, ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -307,7 +307,7 @@ const Posts = () => {
                               disabled={saving}
                               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                             >
-                              <ThumbUp size={14} /> {comment.likeCount ?? 0}
+                              <ThumbsUp size={14} /> {comment.likeCount ?? 0}
                             </button>
                             {String(comment.senderId) === String(currentId) && (
                               <button
