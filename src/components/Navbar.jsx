@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   ShieldAlert, Zap, Compass, Trophy, User, 
-  Sparkles, Target, LogOut, GraduationCap, Star, Activity, ChevronDown 
+  Sparkles, Target, LogOut, GraduationCap, Star, Activity, ChevronDown, Heart 
 } from 'lucide-react';
 
 const Navbar = () => {
