@@ -44,16 +44,18 @@ export default function AdminUsers() {
     }
 
     // optimistic UI (immediate change)
-    setUsers((prev) =>
-      prev.map((u) =>
+    setUsers(prev =>
+      prev.map(u =>
         u.id === id
           ? {
             ...u,
-            role: role
+            role,
+            isAdmin: role === "Admin"
           }
           : u
       )
     );
+
 
     try {
       await api.post(`admin/users/${id}/roles`, `"${role}"`);
@@ -135,15 +137,17 @@ export default function AdminUsers() {
                       </td>
                       <td style={{ padding: '16px', color: 'rgba(255,255,255,0.8)' }}>{user.email}</td>
                       <td style={{ padding: '16px', color: 'rgba(255,255,255,0.8)' }}>
-                        {user.isAdmin ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {user.role === "Admin" ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             <Shield size={16} color="#3B82F6" />
-                            <span style={{ fontWeight: '500', color: '#3B82F6' }}>Admin</span>
+                            <span style={{ fontWeight: "500", color: "#3B82F6" }}>Admin</span>
                           </div>
                         ) : (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             <Trophy size={16} color="#A855F7" />
-                            <span style={{ fontWeight: '500' }}>{user.stats?.currentLeague || user.stats?.current_league || 'Rookie'}</span>
+                            <span style={{ fontWeight: "500" }}>
+                              {user.stats?.currentLeague || user.stats?.current_league || "Rookie"}
+                            </span>
                           </div>
                         )}
                       </td>
