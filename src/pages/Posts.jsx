@@ -249,7 +249,7 @@ const Posts = () => {
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                     <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10B981' }} />
-                    <span style={{ color: '#94A3B8', fontSize: '0.9rem' }}>Posted by {post.sender} - {post.sender.fullName} · {formatDate(post.shareDate)}</span>
+                    <span style={{ color: '#94A3B8', fontSize: '0.9rem' }}>Posted by {post.sender.userName} - {post.sender.fullName} · {formatDate(post.shareDate)}</span>
                   </div>
                   <p style={{ margin: 0, fontSize: '1rem', lineHeight: 1.8, color: '#E2E8F0' }}>{post.text || post.content || ''}</p>
                 </div>
