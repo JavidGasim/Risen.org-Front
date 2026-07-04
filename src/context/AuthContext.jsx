@@ -2,8 +2,9 @@ import { createContext, useState, useEffect, useContext } from "react";
 import api from "../utils/api";
 import { setCookie, getCookie, deleteCookie } from "../utils/cookie";
 import {
-  startSignalRConnection,
-  stopSignalRConnection,
+  startNotificationSignalRConnection,
+  startCommunitySignalRConnection,
+  stopSignalRConnections,
 } from "../services/signalrService";
 
 const AuthContext = createContext();
@@ -130,7 +131,9 @@ export const AuthProvider = ({ children }) => {
 
     const connectSignalR = async () => {
       try {
-        const conn = await startSignalRConnection(token);
+        const conn = await startNotificationSignalRConnection(token);
+
+        await startCommunitySignalRConnection(token);
 
         if (!isMounted) return;
 
@@ -279,7 +282,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await stopSignalRConnection();
+    await stopSignalRConnections();
 
     deleteCookie("risen_token");
     setUser(null);

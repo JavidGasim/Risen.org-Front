@@ -1,14 +1,18 @@
 import * as signalR from "@microsoft/signalr";
 
-let connection = null;
+let notificationConnection = null;
+let communityConnection = null;
 
-export const startSignalRConnection = async (token) => {
-    if (connection) return connection;
+const API_URL =
+    import.meta.env.VITE_API_BASE_URL ||
+    "https://risen-org-back.onrender.com";
 
-    const API_URL =
-        import.meta.env.VITE_API_BASE_URL ||
-        "https://risen-org-back.onrender.com";
-    connection = new signalR.HubConnectionBuilder()
+// ---------------- Notification ----------------
+
+export const startNotificationSignalRConnection = async (token) => {
+    if (notificationConnection) return notificationConnection;
+
+    notificationConnection = new signalR.HubConnectionBuilder()
         .withUrl(`${API_URL}/notificationHub`, {
             accessTokenFactory: () => token,
             transport: signalR.HttpTransportType.WebSockets,
@@ -17,30 +21,44 @@ export const startSignalRConnection = async (token) => {
         .configureLogging(signalR.LogLevel.Information)
         .build();
 
-    connection.onclose((err) => {
-        console.log("SignalR Closed:", err);
-    });
+    await notificationConnection.start();
 
-    connection.onreconnecting(() => {
-        console.log("SignalR Reconnecting...");
-    });
-
-    connection.onreconnected(() => {
-        console.log("SignalR Reconnected");
-    });
-
-    await connection.start();
-
-    console.log("SignalR Connected");
-
-    return connection;
+    return notificationConnection;
 };
 
-export const stopSignalRConnection = async () => {
-    if (connection) {
-        await connection.stop();
-        connection = null;
+export const getNotificationSignalRConnection = () => notificationConnection;
+
+// ---------------- Community ----------------
+
+export const startCommunitySignalRConnection = async (token) => {
+    if (communityConnection) return communityConnection;
+
+    communityConnection = new signalR.HubConnectionBuilder()
+        .withUrl(`${API_URL}/communityHub`, {
+            accessTokenFactory: () => token,
+            transport: signalR.HttpTransportType.WebSockets,
+        })
+        .withAutomaticReconnect()
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    await communityConnection.start();
+
+    return communityConnection;
+};
+
+export const getCommunitySignalRConnection = () => communityConnection;
+
+// ---------------- Stop ----------------
+
+export const stopSignalRConnections = async () => {
+    if (notificationConnection) {
+        await notificationConnection.stop();
+        notificationConnection = null;
+    }
+
+    if (communityConnection) {
+        await communityConnection.stop();
+        communityConnection = null;
     }
 };
-
-export const getSignalRConnection = () => connection;

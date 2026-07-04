@@ -1,13 +1,12 @@
 import { useEffect } from "react";
-import { getSignalRConnection } from "../services/signalrService";
+import { getNotificationSignalRConnection } from "../services/signalrService";
 
-export const useAdminSignalR = ({ setUsers, fetchUsers }) => {
+export const useAdminSignalR = ({ fetchUsers }) => {
     useEffect(() => {
-        const conn = getSignalRConnection();
+        const conn = getNotificationSignalRConnection();
 
         if (!conn) return;
 
-        // ROLE CHANGE → user update
         conn.on("RoleChanged", async (data) => {
             console.log("RoleChanged:", data);
 
@@ -15,12 +14,11 @@ export const useAdminSignalR = ({ setUsers, fetchUsers }) => {
                 // optional token update logic
             }
 
-            await fetchUsers(); // simplest + safest
+            await fetchUsers();
         });
 
-        // GLOBAL REFRESH
         conn.on("UsersUpdated", async () => {
-            console.log("UsersUpdated event received");
+            console.log("UsersUpdated");
             await fetchUsers();
         });
 
@@ -28,5 +26,5 @@ export const useAdminSignalR = ({ setUsers, fetchUsers }) => {
             conn.off("RoleChanged");
             conn.off("UsersUpdated");
         };
-    }, [setUsers, fetchUsers]);
+    }, [fetchUsers]);
 };
