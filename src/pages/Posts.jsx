@@ -5,7 +5,7 @@ import {
   Heart, MessageCircle, Send, Trash2, ThumbsUp, Loader2, ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useCommunitySignalR } from "../../hooks/useCommunitySignalR";
+import { useCommunitySignalR } from "../hooks/useCommunitySignalR";
 
 const Posts = () => {
   const { user } = useAuth();
