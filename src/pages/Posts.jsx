@@ -24,6 +24,11 @@ const Posts = () => {
     return value.posts || value.items || [];
   };
 
+  const getComments = (postId) => {
+    const post = posts.find(p => (p.id || p.postId) === postId);
+    return post?.comments || [];
+  };
+
   const loadFeed = async () => {
     try {
       setError('');
