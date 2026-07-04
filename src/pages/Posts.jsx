@@ -299,7 +299,7 @@ const Posts = () => {
                         <div key={commentId} style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '14px' }}>
                           <div style={{ flex: 1, minWidth: '220px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '10px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                              <span style={{ fontWeight: 700, color: '#F8FAFC' }}>{getUserLabel(comment.sender)}</span>
+                              <span style={{ fontWeight: 700, color: '#F8FAFC' }}>{getUserLabel(comment.sender.fullName)} - {comment.sender.userName}</span>
                               <span style={{ color: '#94A3B8', fontSize: '0.82rem' }}>{formatDate(comment.writingDate)}</span>
                             </div>
                             <p style={{ margin: 0, color: '#CBD5E1', lineHeight: 1.8 }}>{comment.content || comment.message || ''}</p>
