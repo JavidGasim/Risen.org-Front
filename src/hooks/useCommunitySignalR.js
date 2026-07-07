@@ -1,49 +1,88 @@
 import { useEffect } from "react";
 import { getCommunitySignalRConnection } from "../services/signalrService";
 
-export const useCommunitySignalR = ({ loadFeed }) => {
+export const useCommunitySignalR = ({
+    setPosts,
+    setLikedPosts,
+    setLikedComments,
+    currentId
+}) => {
+
     useEffect(() => {
+
         const conn = getCommunitySignalRConnection();
 
         if (!conn) return;
 
-        conn.on("PostAdded", async () => {
-            console.log("PostAdded");
-            await loadFeed();
+        // NEW POST
+        conn.on("PostAdded", (post) => {
+
+            setPosts(prev => {
+
+                if (prev.some(x => x.id === post.id))
+                    return prev;
+
+                return [post, ...prev];
+            });
+
         });
 
-        conn.on("PostDeleted", async () => {
-            console.log("PostDeleted");
-            await loadFeed();
+        // DELETE POST
+        conn.on("PostDeleted", ({ postId }) => {
+
+            setPosts(prev =>
+                prev.filter(x => x.id !== postId)
+            );
+
         });
 
-        conn.on("CommentAdded", async () => {
-            console.log("CommentAdded");
-            await loadFeed();
-        });
+        // LIKE / DISLIKE POST
+        conn.on("PostLikeChanged", (data) => {
 
-        conn.on("CommentDeleted", async () => {
-            console.log("CommentDeleted");
-            await loadFeed();
-        });
+            setPosts(prev =>
+                prev.map(post =>
+                    post.id === data.postId
+                        ? {
+                            ...post,
+                            likeCount: data.likeCount
+                        }
+                        : post
+                )
+            );
 
-        conn.on("PostLikeChanged", async () => {
-            console.log("PostLikeChanged");
-            await loadFeed();
-        });
+            if (data.userId === currentId) {
 
-        conn.on("CommentLikeChanged", async () => {
-            console.log("CommentLikeChanged");
-            await loadFeed();
+                setLikedPosts(prev => {
+
+                    if (data.isLiked) {
+
+                        if (prev.some(x => x.postId === data.postId))
+                            return prev;
+
+                        return [
+                            ...prev,
+                            {
+                                postId: data.postId
+                            }
+                        ];
+                    }
+
+                    return prev.filter(x => x.postId !== data.postId);
+
+                });
+
+            }
+
         });
 
         return () => {
+
             conn.off("PostAdded");
             conn.off("PostDeleted");
-            conn.off("CommentAdded");
-            conn.off("CommentDeleted");
             conn.off("PostLikeChanged");
-            conn.off("CommentLikeChanged");
+
         };
-    }, [loadFeed]);
+
+    }, [currentId]);
+
 };

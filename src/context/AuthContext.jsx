@@ -131,7 +131,8 @@ export const AuthProvider = ({ children }) => {
 
     const connectSignalR = async () => {
       try {
-        const conn = await startNotificationSignalRConnection(token);
+        const notificationConn = await startNotificationSignalRConnection(token);
+        const communityConn = await startCommunitySignalRConnection(token);
 
         await startCommunitySignalRConnection(token);
 
@@ -140,7 +141,7 @@ export const AuthProvider = ({ children }) => {
         console.log("SignalR connected");
 
         // ROLE UPDATE
-        conn.on("RoleChanged", async (data) => {
+        notificationConn.on("RoleChanged", async (data) => {
           console.log("RoleChanged:", data);
 
           try {
@@ -158,7 +159,7 @@ export const AuthProvider = ({ children }) => {
         });
 
         // FORCE LOGOUT
-        conn.on("ForceLogout", () => {
+        notificationConn.on("ForceLogout", () => {
           console.log("ForceLogout received");
           logout();
         });
@@ -172,7 +173,7 @@ export const AuthProvider = ({ children }) => {
 
     return () => {
       isMounted = false;
-      stopSignalRConnection();
+      stopSignalRConnections();
     };
   }, [isAuthenticated]);
 

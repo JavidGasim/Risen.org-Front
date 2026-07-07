@@ -57,8 +57,13 @@ const Posts = () => {
     }
   }, [user]);
 
-  useCommunitySignalR({ loadFeed });
-
+  useCommunitySignalR({
+    setPosts,
+    setLikedPosts,
+    setLikedComments,
+    currentId
+  });
+  
   useEffect(() => {
     loadFeed();
   }, [loadFeed]);
@@ -93,7 +98,6 @@ const Posts = () => {
         params: { text: newPostText.trim() }
       });
       setNewPostText('');
-      await loadFeed();
     } catch (err) {
       console.error('Failed to publish post', err);
       setError(err.response?.data?.message || 'Failed to publish your post.');
@@ -109,7 +113,6 @@ const Posts = () => {
       await api.post('/Posts/likePost', null, {
         params: { id: postId, currentId }
       });
-      await loadFeed();
     } catch (err) {
       console.error('Failed to toggle post like', err);
       setError(err.response?.data?.message || 'Unable to update post like.');
@@ -125,7 +128,6 @@ const Posts = () => {
       await api.post('/Posts/likeComment', null, {
         params: { id: commentId, senderId: currentId }
       });
-      await loadFeed();
     } catch (err) {
       console.error('Failed to toggle comment like', err);
       setError(err.response?.data?.message || 'Unable to update comment like.');
@@ -145,7 +147,6 @@ const Posts = () => {
         params: { id: postId, message: content, senderId: currentId }
       });
       setCommentDrafts((prev) => ({ ...prev, [postId]: '' }));
-      await loadFeed();
     } catch (err) {
       console.error('Failed to add comment', err);
       setError(err.response?.data?.message || 'Unable to add comment.');
@@ -160,7 +161,6 @@ const Posts = () => {
       setSaving(true);
       setError('');
       await api.post('/Posts/deletePost', null, { params: { id: postId } });
-      await loadFeed();
     } catch (err) {
       console.error('Failed to delete post', err);
       setError(err.response?.data?.message || 'Unable to delete post.');
@@ -175,7 +175,6 @@ const Posts = () => {
       setSaving(true);
       setError('');
       await api.post('/Posts/deleteComment', null, { params: { id: commentId } });
-      await loadFeed();
     } catch (err) {
       console.error('Failed to delete comment', err);
       setError(err.response?.data?.message || 'Unable to delete comment.');
