@@ -75,12 +75,90 @@ export const useCommunitySignalR = ({
 
         });
 
+        conn.on("CommentAdded", (data) => {
+
+            setPosts(prev =>
+                prev.map(post =>
+                    post.id === data.postId
+                        ? {
+                            ...post,
+                            commentCount: data.commentCount,
+                            comments: [...(post.comments || []), data.comment]
+                        }
+                        : post
+                )
+            );
+
+        });
+
+        conn.on("CommentDeleted", (data) => {
+
+            setPosts(prev =>
+                prev.map(post =>
+                    post.id === data.postId
+                        ? {
+                            ...post,
+                            commentCount: data.commentCount,
+                            comments: (post.comments || []).filter(
+                                c => c.id !== data.commentId
+                            )
+                        }
+                        : post
+                )
+            );
+
+        });
+
+        conn.on("CommentLikeChanged", (data) => {
+
+            setPosts(prev =>
+                prev.map(post => ({
+                    ...post,
+                    comments: (post.comments || []).map(comment =>
+                        comment.id === data.commentId
+                            ? {
+                                ...comment,
+                                likeCount: data.likeCount
+                            }
+                            : comment
+                    )
+                }))
+            );
+
+            if (data.userId === currentId) {
+
+                setLikedComments(prev => {
+
+                    if (data.isLiked) {
+
+                        if (prev.some(x => x.commentId === data.commentId))
+                            return prev;
+
+                        return [
+                            ...prev,
+                            {
+                                commentId: data.commentId
+                            }
+                        ];
+                    }
+
+                    return prev.filter(x => x.commentId !== data.commentId);
+
+                });
+
+            }
+
+        });
+
         return () => {
 
             conn.off("PostAdded");
             conn.off("PostDeleted");
             conn.off("PostLikeChanged");
 
+            conn.off("CommentAdded");
+            conn.off("CommentDeleted");
+            conn.off("CommentLikeChanged");
         };
 
     }, [currentId]);
