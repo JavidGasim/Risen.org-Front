@@ -78,19 +78,23 @@ export const useCommunitySignalR = ({
         conn.on("CommentAdded", (data) => {
 
             setPosts(prev =>
-                prev.map(post =>
-                    post.id === data.postId
-                        ? {
-                            ...post,
-                            commentCount: data.commentCount,
-                            comments: [...(post.comments || []), data.comment]
-                        }
-                        : post
-                )
+                prev.map(post => {
+
+                    if (post.id !== data.postId)
+                        return post;
+
+                    if ((post.comments || []).some(c => c.id === data.comment.id))
+                        return post;
+
+                    return {
+                        ...post,
+                        commentCount: data.commentCount,
+                        comments: [...(post.comments || []), data.comment]
+                    };
+                })
             );
 
         });
-
         conn.on("CommentDeleted", (data) => {
 
             setPosts(prev =>
