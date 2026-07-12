@@ -80,63 +80,35 @@ export const searchUsers = async (query) => {
 };
 
 export const loadFriendshipData = async (userId) => {
-  const candidates = [
-    () => api.get('/Friendships', { params: { userId } }),
-    () => api.get('/friendships', { params: { userId } }),
-    () => api.get('/Friends', { params: { userId } }),
-    () => api.get('/friends', { params: { userId } }),
-    () => api.get('/Friendships/me', { params: { userId } })
-  ];
+  const response = await api.get('/Friend/all').catch(() => ({ data: [] }));
+  const payload = response?.data || [];
 
-  const response = await tryRequests(candidates);
-  const payload = response?.data || {};
+  const friends = Array.isArray(payload)
+    ? payload
+    : normalizeItems(payload?.friends || payload?.acceptedFriends || payload?.items || payload?.data || payload?.friendships);
 
-  const friends = normalizeItems(payload?.friends || payload?.acceptedFriends || payload?.items || payload?.data || payload?.friendships);
-  const incoming = normalizeItems(payload?.incomingRequests || payload?.incoming || payload?.receivedRequests || payload?.requests?.incoming);
-  const outgoing = normalizeItems(payload?.outgoingRequests || payload?.outgoing || payload?.sentRequests || payload?.requests?.outgoing);
-
-  return { friends, incoming, outgoing };
+  return {
+    friends,
+    incoming: [],
+    outgoing: []
+  };
 };
 
 export const sendFriendRequest = async (targetUserId) => {
-  const candidates = [
-    () => api.post('/Friendships', { receiverId: targetUserId }),
-    () => api.post('/friendships', { receiverId: targetUserId }),
-    () => api.post('/Friendships/request', { receiverId: targetUserId }),
-    () => api.post('/friendships/request', { receiverId: targetUserId }),
-    () => api.post('/Friends/request', { receiverId: targetUserId }),
-    () => api.post('/friends/request', { receiverId: targetUserId }),
-    () => api.post(`/Friendships/${targetUserId}/request`),
-    () => api.post(`/friends/${targetUserId}/request`)
-  ];
-
-  const response = await tryRequests(candidates);
+  const response = await api.post(`/Friend/send-request/${targetUserId}`);
   return response?.data;
 };
 
 export const acceptFriendRequest = async (requestId) => {
-  const candidates = [
-    () => api.post(`/Friendships/${requestId}/accept`),
-    () => api.post(`/friendships/${requestId}/accept`),
-    () => api.post(`/Friends/${requestId}/accept`),
-    () => api.post(`/friends/${requestId}/accept`),
-    () => api.put(`/Friendships/${requestId}`, { status: 'Accepted' })
-  ];
-
-  const response = await tryRequests(candidates);
+  const response = await api.post(`/Friend/accept/${requestId}`);
   return response?.data;
 };
 
 export const rejectFriendRequest = async (requestId) => {
-  const candidates = [
-    () => api.post(`/Friendships/${requestId}/reject`),
-    () => api.post(`/friendships/${requestId}/reject`),
-    () => api.post(`/Friends/${requestId}/reject`),
-    () => api.post(`/friends/${requestId}/reject`),
-    () => api.put(`/Friendships/${requestId}`, { status: 'Rejected' })
-  ];
+  const response = await api.post(`/Friend/reject/${requestId}`).catch((error) => {
+    throw new Error(error?.response?.data?.message || 'Reject endpoint is not available for this backend.');
+  });
 
-  const response = await tryRequests(candidates);
   return response?.data;
 };
 
