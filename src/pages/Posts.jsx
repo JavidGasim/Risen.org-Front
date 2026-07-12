@@ -6,6 +6,17 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCommunitySignalR } from "../hooks/useCommunitySignalR";
+import {
+  acceptFriendRequest,
+  getFriendshipErrorMessage,
+  getRequestId,
+  getRequestSenderId,
+  getUserDisplayName,
+  getUserId,
+  loadFriendshipData,
+  rejectFriendRequest,
+  sendFriendRequest
+} from '../utils/friendship';
 
 const Posts = () => {
   const { user } = useAuth();
@@ -18,6 +29,10 @@ const Posts = () => {
   const [error, setError] = useState('');
   const [newPostText, setNewPostText] = useState('');
   const [commentDrafts, setCommentDrafts] = useState({});
+  const [friendshipData, setFriendshipData] = useState({ friends: [], incoming: [], outgoing: [] });
+  const [friendshipLoading, setFriendshipLoading] = useState(false);
+  const [friendshipMessage, setFriendshipMessage] = useState({ type: '', text: '' });
+  const [friendActionLoading, setFriendActionLoading] = useState({});
 
   const normalizePosts = (value) => {
     if (Array.isArray(value)) return value;
@@ -67,6 +82,23 @@ const Posts = () => {
   useEffect(() => {
     loadFeed();
   }, [loadFeed]);
+
+  useEffect(() => {
+    const loadFriendships = async () => {
+      if (!user?.id) return;
+      setFriendshipLoading(true);
+      try {
+        const data = await loadFriendshipData(user.id);
+        setFriendshipData(data);
+      } catch (error) {
+        console.error('Failed to load friendships', error);
+      } finally {
+        setFriendshipLoading(false);
+      }
+    };
+
+    loadFriendships();
+  }, [user?.id]);
 
   const likedPostIds = useMemo(
     () => new Set(likedPosts.map((item) => item.postId || item.post?.id || item.id)),
@@ -183,6 +215,75 @@ const Posts = () => {
     }
   };
 
+  const getRelationshipState = (targetUser) => {
+    const targetId = getUserId(targetUser);
+    if (!targetId) return 'add';
+
+    const isFriend = friendshipData.friends.some((entry) => {
+      const candidateIds = [getUserId(entry), getUserId(entry?.user), getUserId(entry?.friend)];
+      return candidateIds.includes(targetId);
+    });
+    if (isFriend) return 'friends';
+
+    const sent = friendshipData.outgoing.some((entry) => {
+      const candidateIds = [getRequestSenderId(entry), getRequestSenderId(entry?.sender), getUserId(entry?.receiver)];
+      return candidateIds.includes(targetId);
+    });
+    if (sent) return 'sent';
+
+    const incoming = friendshipData.incoming.some((entry) => {
+      const candidateIds = [getRequestSenderId(entry), getRequestSenderId(entry?.sender), getUserId(entry?.receiver)];
+      return candidateIds.includes(targetId);
+    });
+    if (incoming) return 'incoming';
+
+    return 'add';
+  };
+
+  const handleSendFriendRequest = async (targetUser) => {
+    const targetId = getUserId(targetUser);
+    if (!targetId) return;
+
+    setFriendActionLoading((prev) => ({ ...prev, [targetId]: true }));
+    setFriendshipMessage({ type: '', text: '' });
+
+    try {
+      await sendFriendRequest(targetId);
+      setFriendshipMessage({ type: 'success', text: `Friend request sent to ${getUserDisplayName(targetUser)}.` });
+      const data = await loadFriendshipData(user.id);
+      setFriendshipData(data);
+    } catch (error) {
+      setFriendshipMessage({ type: 'error', text: getFriendshipErrorMessage(error) });
+    } finally {
+      setFriendActionLoading((prev) => ({ ...prev, [targetId]: false }));
+    }
+  };
+
+  const handleRespondToRequest = async (request, action) => {
+    const requestId = getRequestId(request);
+    if (!requestId) return;
+
+    setFriendActionLoading((prev) => ({ ...prev, [requestId]: true }));
+    setFriendshipMessage({ type: '', text: '' });
+
+    try {
+      if (action === 'accept') {
+        await acceptFriendRequest(requestId);
+        setFriendshipMessage({ type: 'success', text: 'Friend request accepted.' });
+      } else {
+        await rejectFriendRequest(requestId);
+        setFriendshipMessage({ type: 'success', text: 'Friend request rejected.' });
+      }
+
+      const data = await loadFriendshipData(user.id);
+      setFriendshipData(data);
+    } catch (error) {
+      setFriendshipMessage({ type: 'error', text: getFriendshipErrorMessage(error) });
+    } finally {
+      setFriendActionLoading((prev) => ({ ...prev, [requestId]: false }));
+    }
+  };
+
   return (
     <div className="container fade-in" style={{ paddingBottom: '60px' }}>
       <div className="slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginBottom: '24px' }}>
@@ -201,6 +302,12 @@ const Posts = () => {
         {error && (
           <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#FCA5A5', padding: '16px 18px', borderRadius: '14px' }}>
             {error}
+          </div>
+        )}
+
+        {friendshipMessage.text && (
+          <div style={{ background: friendshipMessage.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${friendshipMessage.type === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`, color: friendshipMessage.type === 'success' ? '#10B981' : '#FCA5A5', padding: '12px 16px', borderRadius: '14px', fontWeight: 600 }}>
+            {friendshipMessage.text}
           </div>
         )}
       </div>
@@ -254,9 +361,20 @@ const Posts = () => {
             <div key={postId} className="premium-card slide-up" style={{ padding: '24px', marginBottom: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
                     <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10B981' }} />
                     <span style={{ color: '#94A3B8', fontSize: '0.9rem' }}>Posted by {post.sender.fullName} - {post.sender.userName} · {formatDate(post.shareDate)}</span>
+                    {post.senderId && String(post.senderId) !== String(currentId) && (
+                      <button
+                        type="button"
+                        className={getRelationshipState(post.sender) === 'friends' ? 'btn btn-success' : 'btn btn-outline'}
+                        onClick={() => handleSendFriendRequest(post.sender)}
+                        disabled={getRelationshipState(post.sender) !== 'add' || friendshipLoading || friendActionLoading[getUserId(post.sender)]}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', fontSize: '0.8rem' }}
+                      >
+                        {friendActionLoading[getUserId(post.sender)] ? <Loader2 size={14} className="animate-spin" /> : getRelationshipState(post.sender) === 'friends' ? 'Friend' : 'Add Friend'}
+                      </button>
+                    )}
                   </div>
                   <p style={{ margin: 0, fontSize: '1rem', lineHeight: 1.8, color: '#E2E8F0' }}>{post.text || post.content || ''}</p>
                 </div>
@@ -301,7 +419,20 @@ const Posts = () => {
                         <div key={commentId} style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '14px' }}>
                           <div style={{ flex: 1, minWidth: '220px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '10px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                              <span style={{ fontWeight: 700, color: '#F8FAFC' }}>{comment.sender.fullName} - {comment.sender.userName}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 700, color: '#F8FAFC' }}>{comment.sender.fullName} - {comment.sender.userName}</span>
+                                {comment.senderId && String(comment.senderId) !== String(currentId) && (
+                                  <button
+                                    type="button"
+                                    className={getRelationshipState(comment.sender) === 'friends' ? 'btn btn-success' : 'btn btn-outline'}
+                                    onClick={() => handleSendFriendRequest(comment.sender)}
+                                    disabled={getRelationshipState(comment.sender) !== 'add' || friendshipLoading || friendActionLoading[getUserId(comment.sender)]}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 8px', fontSize: '0.75rem' }}
+                                  >
+                                    {friendActionLoading[getUserId(comment.sender)] ? <Loader2 size={13} className="animate-spin" /> : getRelationshipState(comment.sender) === 'friends' ? 'Friend' : 'Add Friend'}
+                                  </button>
+                                )}
+                              </div>
                               <span style={{ color: '#94A3B8', fontSize: '0.82rem' }}>{formatDate(comment.writingDate)}</span>
                             </div>
                             <p style={{ margin: 0, color: '#CBD5E1', lineHeight: 1.8 }}>{comment.content || comment.message || ''}</p>

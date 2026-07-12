@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   ShieldAlert, Zap, Compass, Trophy, User, 
-  Sparkles, Target, LogOut, GraduationCap, Star, Activity, ChevronDown, Heart 
+  Sparkles, Target, LogOut, GraduationCap, Star, Activity, ChevronDown, Heart, Bell, Users 
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -55,6 +55,8 @@ const Navbar = () => {
               { to: '/dashboard', icon: <Compass size={18} />, label: 'Dashboard' },
               { to: '/subjects', icon: <Zap size={18} />, label: 'Subjects' },
               { to: '/posts', icon: <Heart size={18} />, label: 'Community' },
+              { to: '/friends', icon: <Users size={18} />, label: 'Friends' },
+              { to: '/notifications', icon: <Bell size={18} />, label: 'Notifications' },
               { to: '/quest', icon: <Target size={18} />, label: 'Quests' },
               { to: '/leaderboards', icon: <Trophy size={18} />, label: 'Leaderboards' },
               { to: '/pricing', icon: <Sparkles size={18} />, label: 'Upgrade', color: '#F59E0B' },
