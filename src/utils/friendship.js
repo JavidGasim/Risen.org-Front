@@ -65,18 +65,34 @@ export const getRelationshipLabel = ({ user, friends = [], incoming = [], outgoi
 export const searchUsers = async (query) => {
   if (!query?.trim()) return [];
 
-  const candidates = [
-    () => api.get('/Users/search', { params: { q: query.trim(), limit: 10 } }),
-    () => api.get('/users/search', { params: { q: query.trim(), limit: 10 } }),
-    () => api.get('/Users', { params: { search: query.trim(), limit: 10 } }),
-    () => api.get('/users', { params: { search: query.trim(), limit: 10 } }),
-    () => api.get('/User/search', { params: { q: query.trim(), limit: 10 } }),
-    () => api.get('/admin/users', { params: { search: query.trim(), limit: 10 } })
-  ];
+  const normalizedQuery = query.trim();
 
-  const response = await tryRequests(candidates);
-  const payload = response?.data;
-  return normalizeItems(payload);
+  try {
+    const response = await api.get('/Friend/users');
+    const payload = response?.data || [];
+
+    const list = Array.isArray(payload)
+      ? payload
+      : normalizeItems(payload);
+
+    return (list || []).filter((user) => {
+      const haystacks = [
+        user?.fullName,
+        user?.firstName,
+        user?.lastName,
+        user?.email,
+        user?.userName,
+        user?.name,
+        user?.username
+      ].filter(Boolean);
+
+      const text = haystacks.join(' ').toLowerCase();
+      return text.includes(normalizedQuery.toLowerCase());
+    }).slice(0, 10);
+  } catch (error) {
+    console.error('Failed to search users', error);
+    return [];
+  }
 };
 
 export const loadFriendshipData = async (userId) => {
