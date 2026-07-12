@@ -3,8 +3,22 @@ import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import {
   User, Mail, School, ShieldCheck,
-  Save, Key, Loader2, CheckCircle2, AlertCircle
+  Save, Key, Loader2, CheckCircle2, AlertCircle,
+  Users, UserPlus, UserCheck, UserX, Search as SearchIcon
 } from 'lucide-react';
+import {
+  acceptFriendRequest,
+  getFriendshipErrorMessage,
+  getRequestId,
+  getRequestSenderId,
+  getRelationshipLabel,
+  getUserDisplayName,
+  getUserId,
+  loadFriendshipData,
+  rejectFriendRequest,
+  searchUsers,
+  sendFriendRequest
+} from '../utils/friendship';
 
 const Profile = () => {
   const { user, refreshStats } = useAuth();
@@ -35,6 +49,13 @@ const Profile = () => {
   const [universities, setUniversities] = useState([]);
   const [loadingUnis, setLoadingUnis] = useState(false);
   const [showUniDropdown, setShowUniDropdown] = useState(false);
+  const [friendQuery, setFriendQuery] = useState('');
+  const [friendSearchResults, setFriendSearchResults] = useState([]);
+  const [friendSearchLoading, setFriendSearchLoading] = useState(false);
+  const [friendshipData, setFriendshipData] = useState({ friends: [], incoming: [], outgoing: [] });
+  const [friendshipLoading, setFriendshipLoading] = useState(false);
+  const [friendshipMessage, setFriendshipMessage] = useState({ type: '', text: '' });
+  const [friendActionLoading, setFriendActionLoading] = useState({});
 
   // Load initial data
   useEffect(() => {
@@ -49,6 +70,23 @@ const Profile = () => {
       setSearchQuery(user.universityName || '');
     }
   }, [user]);
+
+  useEffect(() => {
+    const loadFriendships = async () => {
+      if (!user?.id) return;
+      setFriendshipLoading(true);
+      try {
+        const data = await loadFriendshipData(user.id);
+        setFriendshipData(data);
+      } catch (error) {
+        console.error('Failed to load friendships', error);
+      } finally {
+        setFriendshipLoading(false);
+      }
+    };
+
+    loadFriendships();
+  }, [user?.id]);
 
   // University search logic
   useEffect(() => {
@@ -76,6 +114,70 @@ const Profile = () => {
     const timer = setTimeout(fetchUnis, 400);
     return () => clearTimeout(timer);
   }, [searchQuery, profileData.universityName]);
+
+  const handleFriendSearch = async () => {
+    if (!friendQuery.trim()) {
+      setFriendSearchResults([]);
+      return;
+    }
+
+    setFriendSearchLoading(true);
+    setFriendshipMessage({ type: '', text: '' });
+
+    try {
+      const results = await searchUsers(friendQuery);
+      const filtered = (results || []).filter((candidate) => getUserId(candidate) !== user?.id);
+      setFriendSearchResults(filtered);
+    } catch (error) {
+      setFriendshipMessage({ type: 'error', text: getFriendshipErrorMessage(error) });
+    } finally {
+      setFriendSearchLoading(false);
+    }
+  };
+
+  const handleSendFriendRequest = async (targetUser) => {
+    const targetId = getUserId(targetUser);
+    if (!targetId) return;
+
+    setFriendActionLoading((prev) => ({ ...prev, [targetId]: true }));
+    setFriendshipMessage({ type: '', text: '' });
+
+    try {
+      await sendFriendRequest(targetId);
+      setFriendshipMessage({ type: 'success', text: `Friend request sent to ${getUserDisplayName(targetUser)}.` });
+      const data = await loadFriendshipData(user.id);
+      setFriendshipData(data);
+    } catch (error) {
+      setFriendshipMessage({ type: 'error', text: getFriendshipErrorMessage(error) });
+    } finally {
+      setFriendActionLoading((prev) => ({ ...prev, [targetId]: false }));
+    }
+  };
+
+  const handleRespondToRequest = async (request, action) => {
+    const requestId = getRequestId(request);
+    if (!requestId) return;
+
+    setFriendActionLoading((prev) => ({ ...prev, [requestId]: true }));
+    setFriendshipMessage({ type: '', text: '' });
+
+    try {
+      if (action === 'accept') {
+        await acceptFriendRequest(requestId);
+        setFriendshipMessage({ type: 'success', text: 'Friend request accepted.' });
+      } else {
+        await rejectFriendRequest(requestId);
+        setFriendshipMessage({ type: 'success', text: 'Friend request rejected.' });
+      }
+
+      const data = await loadFriendshipData(user.id);
+      setFriendshipData(data);
+    } catch (error) {
+      setFriendshipMessage({ type: 'error', text: getFriendshipErrorMessage(error) });
+    } finally {
+      setFriendActionLoading((prev) => ({ ...prev, [requestId]: false }));
+    }
+  };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -171,6 +273,134 @@ const Profile = () => {
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '32px' }}>
+
+        <div className="premium-card slide-up" style={{ padding: '32px', gridColumn: '1 / -1' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '12px' }}>
+              <Users size={24} color="#10B981" />
+            </div>
+            <h2 style={{ margin: 0, fontSize: '1.4rem' }}>Friends & Requests</h2>
+          </div>
+
+          {friendshipMessage.text && (
+            <div className="slide-up" style={{
+              background: friendshipMessage.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              border: `1px solid ${friendshipMessage.type === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+              color: friendshipMessage.type === 'success' ? '#10B981' : '#FCA5A5',
+              padding: '12px 16px', borderRadius: '12px', marginBottom: '20px', fontWeight: 600
+            }}>
+              {friendshipMessage.text}
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gap: '20px' }}>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search people to add"
+                value={friendQuery}
+                onChange={(e) => setFriendQuery(e.target.value)}
+                style={{ flex: '1 1 240px' }}
+              />
+              <button onClick={handleFriendSearch} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {friendSearchLoading ? <Loader2 size={18} className="animate-spin" /> : <SearchIcon size={18} />}
+                Search
+              </button>
+            </div>
+
+            {friendSearchLoading ? (
+              <div style={{ color: '#94A3B8' }}>Searching users...</div>
+            ) : friendSearchResults.length > 0 ? (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {friendSearchResults.map((candidate) => {
+                  const targetId = getUserId(candidate);
+                  const relationship = getRelationshipLabel({ user: candidate, friends: friendshipData.friends, incoming: friendshipData.incoming, outgoing: friendshipData.outgoing });
+                  const isBusy = Boolean(friendActionLoading[targetId]);
+
+                  return (
+                    <div key={targetId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#F8FAFC' }}>{getUserDisplayName(candidate)}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>{candidate.email || 'No email shared'}</div>
+                      </div>
+                      <button
+                        onClick={() => handleSendFriendRequest(candidate)}
+                        className="btn btn-outline"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}
+                        disabled={relationship !== 'Add Friend' || isBusy}
+                      >
+                        {isBusy ? <Loader2 size={16} className="animate-spin" /> : relationship === 'Add Friend' ? <UserPlus size={16} /> : <UserCheck size={16} />}
+                        {relationship}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : friendQuery.trim() ? (
+              <div style={{ color: '#94A3B8' }}>No users found.</div>
+            ) : null}
+          </div>
+
+          <div style={{ marginTop: '24px', display: 'grid', gap: '16px' }}>
+            <div>
+              <h3 style={{ marginBottom: '12px', color: '#F8FAFC' }}>Incoming Requests</h3>
+              {friendshipLoading ? (
+                <div style={{ color: '#94A3B8' }}>Loading requests...</div>
+              ) : friendshipData.incoming.length > 0 ? (
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {friendshipData.incoming.map((request) => {
+                    const senderId = getRequestSenderId(request);
+                    const isBusy = Boolean(friendActionLoading[getRequestId(request)]);
+                    const senderName = request.sender?.fullName || request.sender?.firstName || request.sender?.name || request.fromUser?.fullName || request.fromUser?.firstName || request.user?.fullName || request.user?.firstName || 'Someone';
+
+                    return (
+                      <div key={getRequestId(request)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <div>
+                          <div style={{ fontWeight: 700, color: '#F8FAFC' }}>{senderName}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Wants to be your friend</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => handleRespondToRequest(request, 'accept')} className="btn btn-success" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} disabled={isBusy}>
+                            {isBusy ? <Loader2 size={16} className="animate-spin" /> : <UserCheck size={16} />}
+                            Accept
+                          </button>
+                          <button onClick={() => handleRespondToRequest(request, 'reject')} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} disabled={isBusy}>
+                            {isBusy ? <Loader2 size={16} className="animate-spin" /> : <UserX size={16} />}
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ color: '#94A3B8' }}>No pending requests.</div>
+              )}
+            </div>
+
+            <div>
+              <h3 style={{ marginBottom: '12px', color: '#F8FAFC' }}>Your Friends</h3>
+              {friendshipLoading ? (
+                <div style={{ color: '#94A3B8' }}>Loading friends...</div>
+              ) : friendshipData.friends.length > 0 ? (
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {friendshipData.friends.map((friend, index) => {
+                    const friendUser = friend.user || friend.friend || friend.targetUser || friend.receiver || friend.sender || friend;
+                    const displayName = getUserDisplayName(friendUser);
+                    return (
+                      <div key={friend.id || friend.userId || friend.friendId || index} style={{ padding: '12px 14px', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#F8FAFC' }}>
+                        {displayName}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ color: '#94A3B8' }}>No friends yet.</div>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Profile Details */}
         <div className="premium-card slide-up" style={{ padding: '32px' }}>
