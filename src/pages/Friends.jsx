@@ -7,6 +7,7 @@ import {
   getRequestId,
   getRequestReceiverId,
   getRequestSenderId,
+  getRequestSenderName,
   getUserDisplayName,
   getUserId,
   loadFriendshipData,
@@ -211,7 +212,7 @@ const Friends = () => {
           <div style={{ display: 'grid', gap: '12px' }}>
             {friendshipData.incoming.map((request) => {
               const requestId = getRequestId(request);
-              const senderName = request.sender?.fullName || request.sender?.firstName || request.sender?.name || request.fromUser?.fullName || request.user?.fullName || 'Someone';
+              const senderName = getRequestSenderName(request) || 'Someone';
               const isBusy = Boolean(friendActionLoading[requestId]);
 
               return (

@@ -5,6 +5,7 @@ import {
   acceptFriendRequest,
   getFriendshipErrorMessage,
   getRequestId,
+  getRequestSenderName,
   getUserDisplayName,
   loadFriendshipData,
   rejectFriendRequest
@@ -113,7 +114,7 @@ const Notifications = () => {
               <div style={{ marginTop: '8px', display: 'grid', gap: '12px' }}>
                 {requests.map((request) => {
                   const requestId = getRequestId(request);
-                  const senderName = request.sender?.fullName || request.sender?.firstName || request.sender?.name || request.user?.fullName || request.user?.firstName || 'Someone';
+                  const senderName = getRequestSenderName(request) || 'Someone';
                   const isBusy = Boolean(actionLoading[requestId]);
 
                   return (

@@ -41,7 +41,7 @@ const tryRequests = async (candidates) => {
 export const getUserDisplayName = (user = {}) => {
   const fullName = [user?.firstName || user?.FirstName, user?.lastName || user?.LastName].filter(Boolean).join(' ').trim();
   if (fullName) return fullName;
-  return user?.fullName || user?.FullName || user?.name || user?.Name || user?.email || user?.Email || 'User';
+  return user?.fullName || user?.FullName || user?.name || user?.Name || user?.userName || user?.UserName || user?.email || user?.Email || 'User';
 };
 
 export const getUserEmail = (user = {}) => user?.email || user?.Email || user?.userName || user?.UserName || '';
@@ -50,9 +50,25 @@ export const getUserId = (user = {}) => user?.id || user?.Id || user?.userId || 
 
 export const getRequestId = (request = {}) => request?.id || request?.Id || request?.friendshipId || request?.friendshipId || request?.requestId || request?.RequestId || request?.friendRequestId || request?.friendRequestId || null;
 
-export const getRequestSenderId = (request = {}) => request?.senderId || request?.SenderId || request?.senderUserId || request?.senderUserId || request?.requesterId || request?.RequesterId || request?.fromUserId || request?.FromUserId || request?.creatorId || request?.CreatorId || request?.sender?.id || request?.sender?.Id || request?.user?.id || request?.user?.Id || null;
+export const getRequestSenderId = (request = {}) => {
+  const sender = request?.sender || request?.Sender || request?.user || request?.User || request?.fromUser || request?.FromUser || request?.requester || request?.Requester || null;
+  return request?.senderId || request?.SenderId || request?.senderUserId || request?.senderUserId || request?.requesterId || request?.RequesterId || request?.fromUserId || request?.FromUserId || request?.creatorId || request?.CreatorId || sender?.id || sender?.Id || sender?.userId || sender?.userID || null;
+};
 
-export const getRequestReceiverId = (request = {}) => request?.receiverId || request?.ReceiverId || request?.receiverUserId || request?.receiverUserId || request?.targetUserId || request?.TargetUserId || request?.toUserId || request?.ToUserId || request?.recipientId || request?.RecipientId || request?.receiver?.id || request?.receiver?.Id || null;
+export const getRequestReceiverId = (request = {}) => {
+  const receiver = request?.receiver || request?.Receiver || request?.toUser || request?.ToUser || request?.recipient || request?.Recipient || request?.targetUser || request?.TargetUser || null;
+  return request?.receiverId || request?.ReceiverId || request?.receiverUserId || request?.receiverUserId || request?.targetUserId || request?.TargetUserId || request?.toUserId || request?.ToUserId || request?.recipientId || request?.RecipientId || receiver?.id || receiver?.Id || receiver?.userId || receiver?.userID || null;
+};
+
+export const getRequestSenderName = (request = {}) => {
+  const sender = request?.sender || request?.Sender || request?.user || request?.User || request?.fromUser || request?.FromUser || request?.requester || request?.Requester || null;
+  return getUserDisplayName(sender);
+};
+
+export const getRequestReceiverName = (request = {}) => {
+  const receiver = request?.receiver || request?.Receiver || request?.toUser || request?.ToUser || request?.recipient || request?.Recipient || request?.targetUser || request?.TargetUser || null;
+  return getUserDisplayName(receiver);
+};
 
 const trackOutgoingRequest = (targetUserId) => {
   if (!targetUserId) return;
@@ -112,10 +128,20 @@ export const searchUsers = async (query) => {
 export const loadFriendshipData = async (userId) => {
   void userId;
 
+  const [friendsResponse, sentResponse, receivedResponse] = await Promise.all([
+    api.get('/Friend/all').catch(() => ({ data: [] })),
+    api.get('/Friend/sent-requests').catch(() => ({ data: [] })),
+    api.get('/Friend/received-requests').catch(() => ({ data: [] }))
+  ]);
+
+  const friends = normalizeItems(friendsResponse?.data);
+  const outgoing = normalizeItems(sentResponse?.data);
+  const incoming = normalizeItems(receivedResponse?.data);
+
   return {
-    friends: [...friendshipStore.friends],
-    incoming: [...friendshipStore.incoming],
-    outgoing: [...friendshipStore.outgoing]
+    friends: [...friends, ...friendshipStore.friends.filter((entry) => !friends.some((friend) => getUserId(friend) && getUserId(friend) === getUserId(entry)))],
+    incoming,
+    outgoing: [...outgoing, ...friendshipStore.outgoing.filter((entry) => !outgoing.some((request) => getRequestReceiverId(request) && getRequestReceiverId(request) === getRequestReceiverId(entry)))]
   };
 };
 
