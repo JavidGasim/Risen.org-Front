@@ -172,6 +172,11 @@ export const acceptFriendRequest = async (requestId) => {
   return response?.data;
 };
 
+export const removeFriend = async (friendId) => {
+  const response = await api.post(`/Friend/remove-friend/${friendId}`);
+  return response?.data;
+};
+
 export const rejectFriendRequest = async (requestId) => {
   const response = await api.post(`/Friend/reject/${requestId}`).catch((error) => {
     throw new Error(error?.response?.data?.message || 'Reject endpoint is not available for this backend.');

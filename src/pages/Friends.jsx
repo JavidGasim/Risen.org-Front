@@ -12,6 +12,7 @@ import {
   getUserId,
   loadFriendshipData,
   rejectFriendRequest,
+  removeFriend,
   searchUsers,
   sendFriendRequest
 } from '../utils/friendship';
@@ -102,6 +103,24 @@ const Friends = () => {
       setMessage({ type: 'error', text: getFriendshipErrorMessage(error) });
     } finally {
       setFriendActionLoading((prev) => ({ ...prev, [requestId]: false }));
+    }
+  };
+
+  const handleRemoveFriend = async (friend) => {
+    const friendId = getUserId(friend);
+    if (!friendId) return;
+
+    setFriendActionLoading((prev) => ({ ...prev, [friendId]: true }));
+    setMessage({ type: '', text: '' });
+
+    try {
+      await removeFriend(friendId);
+      setMessage({ type: 'success', text: `Removed ${getUserDisplayName(friend)} from your friends.` });
+      await refreshFriendships();
+    } catch (error) {
+      setMessage({ type: 'error', text: getFriendshipErrorMessage(error) });
+    } finally {
+      setFriendActionLoading((prev) => ({ ...prev, [friendId]: false }));
     }
   };
 
@@ -218,6 +237,15 @@ const Friends = () => {
                     <div style={{ fontWeight: 700, color: '#F8FAFC' }}>{getUserDisplayName(friend)}</div>
                     <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>{friend?.email || friend?.Email || 'No email shared'}</div>
                   </div>
+                  <button
+                    onClick={() => handleRemoveFriend(friend)}
+                    className="btn btn-outline"
+                    disabled={Boolean(friendActionLoading[friendId])}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    {friendActionLoading[friendId] ? <Loader2 size={16} className="animate-spin" /> : <UserX size={16} />}
+                    Remove
+                  </button>
                 </div>
               );
             })}
