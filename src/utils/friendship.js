@@ -33,18 +33,20 @@ const tryRequests = async (candidates) => {
 };
 
 export const getUserDisplayName = (user = {}) => {
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+  const fullName = [user?.firstName || user?.FirstName, user?.lastName || user?.LastName].filter(Boolean).join(' ').trim();
   if (fullName) return fullName;
-  return user.fullName || user.name || user.email || 'User';
+  return user?.fullName || user?.FullName || user?.name || user?.Name || user?.email || user?.Email || 'User';
 };
 
-export const getUserId = (user = {}) => user?.id || user?.userId || user?.user?.id || user?.userId || null;
+export const getUserEmail = (user = {}) => user?.email || user?.Email || user?.userName || user?.UserName || '';
 
-export const getRequestId = (request = {}) => request?.id || request?.friendshipId || request?.requestId || request?.friendRequestId || null;
+export const getUserId = (user = {}) => user?.id || user?.Id || user?.userId || user?.userID || user?.user?.id || user?.user?.Id || null;
 
-export const getRequestSenderId = (request = {}) => request?.senderId || request?.senderUserId || request?.requesterId || request?.fromUserId || request?.creatorId || request?.sender?.id || request?.user?.id || null;
+export const getRequestId = (request = {}) => request?.id || request?.Id || request?.friendshipId || request?.friendshipId || request?.requestId || request?.RequestId || request?.friendRequestId || request?.friendRequestId || null;
 
-export const getRequestReceiverId = (request = {}) => request?.receiverId || request?.receiverUserId || request?.targetUserId || request?.toUserId || request?.recipientId || request?.receiver?.id || null;
+export const getRequestSenderId = (request = {}) => request?.senderId || request?.SenderId || request?.senderUserId || request?.senderUserId || request?.requesterId || request?.RequesterId || request?.fromUserId || request?.FromUserId || request?.creatorId || request?.CreatorId || request?.sender?.id || request?.sender?.Id || request?.user?.id || request?.user?.Id || null;
+
+export const getRequestReceiverId = (request = {}) => request?.receiverId || request?.ReceiverId || request?.receiverUserId || request?.receiverUserId || request?.targetUserId || request?.TargetUserId || request?.toUserId || request?.ToUserId || request?.recipientId || request?.RecipientId || request?.receiver?.id || request?.receiver?.Id || null;
 
 export const getRelationshipLabel = ({ user, friends = [], incoming = [], outgoing = [] }) => {
   const targetId = getUserId(user);
