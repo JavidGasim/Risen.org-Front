@@ -3,14 +3,22 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   ShieldAlert, Zap, Compass, Trophy, User, 
-  Sparkles, Target, LogOut, GraduationCap, Star, Activity, ChevronDown, Heart, Bell, Users 
+  Sparkles, Target, LogOut, GraduationCap, Star, Activity, ChevronDown, Heart, Bell, Users,
+  CheckCircle2, AlertCircle
 } from 'lucide-react';
+import { loadFriendshipData, getRequestSenderName, getRequestId, acceptFriendRequest, rejectFriendRequest, getFriendshipErrorMessage } from '../utils/friendship';
 
 const Navbar = () => {
   const { isAuthenticated, logout, user, stats } = useAuth();
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [requests, setRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [actionLoading, setActionLoading] = useState({});
+  const [message, setMessage] = useState({ type: '', text: '' });
   const dropdownRef = useRef(null);
+  const notificationsRef = useRef(null);
 
   const handleLogout = () => {
     setIsProfileOpen(false);
@@ -18,15 +26,62 @@ const Navbar = () => {
     navigate('/');
   };
 
+  const refreshNotifications = async () => {
+    if (!user?.id) return;
+
+    setLoadingRequests(true);
+    try {
+      const data = await loadFriendshipData(user.id);
+      setRequests(data.incoming || []);
+    } catch (error) {
+      console.error('Failed to load notifications', error);
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  const handleRespondToRequest = async (request, action) => {
+    const requestId = getRequestId(request);
+    if (!requestId) return;
+
+    setActionLoading((prev) => ({ ...prev, [requestId]: true }));
+    setMessage({ type: '', text: '' });
+
+    try {
+      if (action === 'accept') {
+        await acceptFriendRequest(requestId);
+        setMessage({ type: 'success', text: 'Friend request accepted.' });
+      } else {
+        await rejectFriendRequest(requestId);
+        setMessage({ type: 'error', text: 'Friend request rejected.' });
+      }
+
+      await refreshNotifications();
+    } catch (error) {
+      setMessage({ type: 'error', text: getFriendshipErrorMessage(error) });
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [requestId]: false }));
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsProfileOpen(false);
       }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      refreshNotifications();
+    }
+  }, [isAuthenticated, user?.id]);
 
   return (
     <nav className="app-navbar" style={{
@@ -56,7 +111,6 @@ const Navbar = () => {
               { to: '/subjects', icon: <Zap size={18} />, label: 'Subjects' },
               { to: '/posts', icon: <Heart size={18} />, label: 'Community' },
               { to: '/friends', icon: <Users size={18} />, label: 'Friends' },
-              { to: '/notifications', icon: <Bell size={18} />, label: 'Notifications' },
               { to: '/quest', icon: <Target size={18} />, label: 'Quests' },
               { to: '/leaderboards', icon: <Trophy size={18} />, label: 'Leaderboards' },
               { to: '/pricing', icon: <Sparkles size={18} />, label: 'Upgrade', color: '#F59E0B' },
@@ -75,33 +129,101 @@ const Navbar = () => {
         )}
       </div>
 
-      <div className="app-navbar-actions" style={{ position: 'relative' }} ref={dropdownRef}>
+      <div className="app-navbar-actions" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '12px' }}>
         {!isAuthenticated ? (
           <div className="app-navbar-auth" style={{ display: 'flex', gap: '16px' }}>
             <Link to="/login" className="btn btn-outline" style={{ padding: '8px 20px' }}>Login</Link>
             <Link to="/register" className="btn btn-primary" style={{ padding: '8px 20px' }}>Join the League</Link>
           </div>
         ) : (
-          <div 
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
-            style={{ 
-              display: 'flex', alignItems: 'center', gap: '12px', 
-              background: 'rgba(255,255,255,0.03)', padding: '6px 16px', 
-              borderRadius: '50px', border: '1px solid rgba(255,255,255,0.08)',
-              cursor: 'pointer', transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-          >
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366F1 0%, #10B981 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '0.9rem' }}>
-              {(user?.firstName || user?.fullName || 'U')[0]}
+          <>
+            <div ref={notificationsRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                style={{
+                  width: '42px', height: '42px', borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative'
+                }}
+              >
+                <Bell size={18} color="#F8FAFC" />
+                {requests.length > 0 && (
+                  <span style={{ position: 'absolute', top: '-2px', right: '-2px', minWidth: '18px', height: '18px', borderRadius: '999px', background: '#10B981', color: '#fff', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>
+                    {requests.length}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationsOpen && (
+                <div style={{ position: 'absolute', top: '120%', right: 0, width: '320px', background: '#0F172A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0,0,0,0.45)', padding: '16px', zIndex: 1000 }}>
+                  <div style={{ fontWeight: 700, color: '#F8FAFC', marginBottom: '12px' }}>Notifications</div>
+                  {message.text && (
+                    <div style={{ background: message.type === 'success' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${message.type === 'success' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, color: message.type === 'success' ? '#10B981' : '#FCA5A5', padding: '8px 10px', borderRadius: '12px', marginBottom: '10px', fontSize: '0.85rem' }}>
+                      {message.text}
+                    </div>
+                  )}
+                  {loadingRequests ? (
+                    <div style={{ color: '#94A3B8', fontSize: '0.9rem' }}>Loading requests...</div>
+                  ) : requests.length > 0 ? (
+                    <div style={{ display: 'grid', gap: '10px' }}>
+                      {requests.map((request) => {
+                        const requestId = getRequestId(request);
+                        const senderName = getRequestSenderName(request) || 'Someone';
+                        const isBusy = Boolean(actionLoading[requestId]);
+
+                        return (
+                          <div key={requestId} style={{ padding: '10px 12px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+                              <AlertCircle size={16} color="#818CF8" />
+                              <div>
+                                <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.9rem' }}>{senderName}</div>
+                                <div style={{ color: '#94A3B8', fontSize: '0.78rem' }}>Sent you a friend request</div>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button onClick={() => handleRespondToRequest(request, 'accept')} className="btn btn-success" style={{ flex: 1, padding: '8px 10px', fontSize: '0.8rem' }} disabled={isBusy}>
+                                {isBusy ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                Accept
+                              </button>
+                              <button onClick={() => handleRespondToRequest(request, 'reject')} className="btn btn-outline" style={{ flex: 1, padding: '8px 10px', fontSize: '0.8rem' }} disabled={isBusy}>
+                                {isBusy ? <Loader2 size={14} className="animate-spin" /> : <AlertCircle size={14} />}
+                                Reject
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ color: '#94A3B8', fontSize: '0.9rem' }}>No new requests.</div>
+                  )}
+                </div>
+              )}
             </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#F8FAFC', lineHeight: 1.2 }}>{user?.firstName || 'User'}</div>
-              <div style={{ fontSize: '0.7rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{user?.entitlement?.plan || 'Free'} Member</div>
+
+            <div ref={dropdownRef} style={{ position: 'relative' }}>
+              <div 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                style={{ 
+                  display: 'flex', alignItems: 'center', gap: '12px', 
+                  background: 'rgba(255,255,255,0.03)', padding: '6px 16px', 
+                  borderRadius: '50px', border: '1px solid rgba(255,255,255,0.08)',
+                  cursor: 'pointer', transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+              >
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366F1 0%, #10B981 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '0.9rem' }}>
+                  {(user?.firstName || user?.fullName || 'U')[0]}
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#F8FAFC', lineHeight: 1.2 }}>{user?.firstName || 'User'}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{user?.entitlement?.plan || 'Free'} Member</div>
+                </div>
+                <ChevronDown size={14} color="#94A3B8" style={{ transform: isProfileOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+              </div>
             </div>
-            <ChevronDown size={14} color="#94A3B8" style={{ transform: isProfileOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-          </div>
+          </>
         )}
 
         {isProfileOpen && (
