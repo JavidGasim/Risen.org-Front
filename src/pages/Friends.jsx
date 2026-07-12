@@ -200,6 +200,33 @@ const Friends = () => {
         ) : null}
       </div>
 
+      <div className="premium-card slide-up" style={{ padding: '28px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+          <UsersIcon size={20} color="#10B981" />
+          <h2 style={{ margin: 0, fontSize: '1.3rem' }}>Your Friends</h2>
+        </div>
+
+        {friendshipLoading ? (
+          <div style={{ color: '#94A3B8' }}>Loading friends...</div>
+        ) : friendshipData.friends.length > 0 ? (
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {friendshipData.friends.map((friend) => {
+              const friendId = getUserId(friend);
+              return (
+                <div key={friendId || `${getUserDisplayName(friend)}-${Math.random()}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#F8FAFC' }}>{getUserDisplayName(friend)}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>{friend?.email || friend?.Email || 'No email shared'}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ color: '#94A3B8' }}>No friends yet.</div>
+        )}
+      </div>
+
       <div className="premium-card slide-up" style={{ padding: '28px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
           <UsersIcon size={20} color="#10B981" />

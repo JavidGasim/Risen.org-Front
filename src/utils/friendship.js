@@ -44,6 +44,22 @@ export const getUserDisplayName = (user = {}) => {
   return user?.fullName || user?.FullName || user?.name || user?.Name || user?.userName || user?.UserName || user?.email || user?.Email || 'User';
 };
 
+const normalizeFriendEntry = (entry) => {
+  if (!entry) return null;
+
+  const normalized = {
+    ...entry,
+    id: getUserId(entry),
+    Id: getUserId(entry),
+    fullName: getUserDisplayName(entry),
+    FullName: getUserDisplayName(entry),
+    email: entry?.email || entry?.Email || entry?.userName || entry?.UserName || '',
+    Email: entry?.email || entry?.Email || entry?.userName || entry?.UserName || ''
+  };
+
+  return normalized;
+};
+
 export const getUserEmail = (user = {}) => user?.email || user?.Email || user?.userName || user?.UserName || '';
 
 export const getUserId = (user = {}) => user?.id || user?.Id || user?.userId || user?.userID || user?.user?.id || user?.user?.Id || null;
@@ -134,7 +150,7 @@ export const loadFriendshipData = async (userId) => {
     api.get('/Friend/received-requests').catch(() => ({ data: [] }))
   ]);
 
-  const friends = normalizeItems(friendsResponse?.data);
+  const friends = normalizeItems(friendsResponse?.data).map(normalizeFriendEntry).filter(Boolean);
   const outgoing = normalizeItems(sentResponse?.data);
   const incoming = normalizeItems(receivedResponse?.data);
 
