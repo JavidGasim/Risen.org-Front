@@ -1,5 +1,11 @@
 import api from './api';
 
+const friendshipStore = {
+  friends: [],
+  incoming: [],
+  outgoing: []
+};
+
 const normalizeItems = (value) => {
   if (Array.isArray(value)) return value;
   if (Array.isArray(value?.items)) return value.items;
@@ -48,6 +54,23 @@ export const getRequestSenderId = (request = {}) => request?.senderId || request
 
 export const getRequestReceiverId = (request = {}) => request?.receiverId || request?.ReceiverId || request?.receiverUserId || request?.receiverUserId || request?.targetUserId || request?.TargetUserId || request?.toUserId || request?.ToUserId || request?.recipientId || request?.RecipientId || request?.receiver?.id || request?.receiver?.Id || null;
 
+const trackOutgoingRequest = (targetUserId) => {
+  if (!targetUserId) return;
+
+  const existing = friendshipStore.outgoing.some((entry) => {
+    const entryReceiverId = getRequestReceiverId(entry);
+    return String(entryReceiverId) === String(targetUserId);
+  });
+
+  if (!existing) {
+    friendshipStore.outgoing.push({
+      id: `local-${Date.now()}-${targetUserId}`,
+      senderId: null,
+      receiverId: targetUserId
+    });
+  }
+};
+
 export const getRelationshipLabel = ({ user, friends = [], incoming = [], outgoing = [] }) => {
   const targetId = getUserId(user);
   if (!targetId) return 'Add Friend';
@@ -87,22 +110,18 @@ export const searchUsers = async (query) => {
 };
 
 export const loadFriendshipData = async (userId) => {
-  const response = await api.get('/Friend/all').catch(() => ({ data: [] }));
-  const payload = response?.data || [];
-
-  const friends = Array.isArray(payload)
-    ? payload
-    : normalizeItems(payload?.friends || payload?.acceptedFriends || payload?.items || payload?.data || payload?.friendships);
+  void userId;
 
   return {
-    friends,
-    incoming: [],
-    outgoing: []
+    friends: [...friendshipStore.friends],
+    incoming: [...friendshipStore.incoming],
+    outgoing: [...friendshipStore.outgoing]
   };
 };
 
 export const sendFriendRequest = async (targetUserId) => {
   const response = await api.post(`/Friend/send-request/${targetUserId}`);
+  trackOutgoingRequest(targetUserId);
   return response?.data;
 };
 

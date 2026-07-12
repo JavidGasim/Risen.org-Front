@@ -5,6 +5,7 @@ import {
   acceptFriendRequest,
   getFriendshipErrorMessage,
   getRequestId,
+  getRequestReceiverId,
   getRequestSenderId,
   getUserDisplayName,
   getUserId,
@@ -114,13 +115,13 @@ const Friends = () => {
     if (isFriend) return 'friends';
 
     const sent = friendshipData.outgoing.some((entry) => {
-      const candidateIds = [getRequestSenderId(entry), getRequestSenderId(entry?.sender), getUserId(entry?.receiver)];
+      const candidateIds = [getRequestReceiverId(entry), getRequestReceiverId(entry?.receiver), getRequestSenderId(entry), getRequestSenderId(entry?.sender)];
       return candidateIds.includes(targetId);
     });
     if (sent) return 'sent';
 
     const incoming = friendshipData.incoming.some((entry) => {
-      const candidateIds = [getRequestSenderId(entry), getRequestSenderId(entry?.sender), getUserId(entry?.receiver)];
+      const candidateIds = [getRequestSenderId(entry), getRequestSenderId(entry?.sender), getRequestReceiverId(entry), getRequestReceiverId(entry?.receiver)];
       return candidateIds.includes(targetId);
     });
     if (incoming) return 'incoming';
