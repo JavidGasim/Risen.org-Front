@@ -68,27 +68,16 @@ export const searchUsers = async (query) => {
   const normalizedQuery = query.trim();
 
   try {
-    const response = await api.get('/Friend/users');
+    const response = await api.get('/Friend/search', {
+      params: { searchTerm: normalizedQuery }
+    });
     const payload = response?.data || [];
 
     const list = Array.isArray(payload)
       ? payload
       : normalizeItems(payload);
 
-    return (list || []).filter((user) => {
-      const haystacks = [
-        user?.fullName,
-        user?.firstName,
-        user?.lastName,
-        user?.email,
-        user?.userName,
-        user?.name,
-        user?.username
-      ].filter(Boolean);
-
-      const text = haystacks.join(' ').toLowerCase();
-      return text.includes(normalizedQuery.toLowerCase());
-    }).slice(0, 10);
+    return (list || []).slice(0, 10);
   } catch (error) {
     console.error('Failed to search users', error);
     return [];
