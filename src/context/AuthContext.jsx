@@ -4,6 +4,7 @@ import { setCookie, getCookie, deleteCookie } from "../utils/cookie";
 import {
   startNotificationSignalRConnection,
   startCommunitySignalRConnection,
+  startFriendSignalRConnection,
   stopSignalRConnections,
 } from "../services/signalrService";
 
@@ -133,8 +134,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const notificationConn = await startNotificationSignalRConnection(token);
         const communityConn = await startCommunitySignalRConnection(token);
-
-        await startCommunitySignalRConnection(token);
+        const friendConn = await startFriendSignalRConnection(token);
 
         if (!isMounted) return;
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Search, UserPlus, UserCheck, UserX, Loader2, Users as UsersIcon } from 'lucide-react';
 import {
@@ -16,6 +16,7 @@ import {
   searchUsers,
   sendFriendRequest
 } from '../utils/friendship';
+import { useFriendSignalR } from "../hooks/useFriendSignalR";
 
 const Friends = () => {
   const { user } = useAuth();
@@ -27,22 +28,28 @@ const Friends = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [friendActionLoading, setFriendActionLoading] = useState({});
 
-  const refreshFriendships = async () => {
+  const refreshFriendships = useCallback(async () => {
     if (!user?.id) return;
+
     setFriendshipLoading(true);
+
     try {
       const data = await loadFriendshipData(user.id);
       setFriendshipData(data);
     } catch (error) {
-      console.error('Failed to load friendships', error);
+      console.error("Failed to load friendships", error);
     } finally {
       setFriendshipLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  useFriendSignalR({
+    refreshFriendships,
+  });
 
   useEffect(() => {
     refreshFriendships();
-  }, [user?.id]);
+  }, [refreshFriendships]);
 
   const handleSearch = async () => {
     if (!friendQuery.trim()) {

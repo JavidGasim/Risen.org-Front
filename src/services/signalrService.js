@@ -2,6 +2,7 @@ import * as signalR from "@microsoft/signalr";
 
 let notificationConnection = null;
 let communityConnection = null;
+let friendConnection = null;
 
 const API_URL =
     import.meta.env.VITE_API_BASE_URL ||
@@ -49,6 +50,25 @@ export const startCommunitySignalRConnection = async (token) => {
 
 export const getCommunitySignalRConnection = () => communityConnection;
 
+export const startFriendSignalRConnection = async (token) => {
+    if (friendConnection) return friendConnection;
+
+    friendConnection = new signalR.HubConnectionBuilder()
+        .withUrl(`${API_URL}/friendHub`, {
+            accessTokenFactory: () => token,
+            transport: signalR.HttpTransportType.WebSockets,
+        })
+        .withAutomaticReconnect()
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    await friendConnection.start();
+
+    return friendConnection;
+};
+
+export const getFriendSignalRConnection = () => friendConnection;
+
 // ---------------- Stop ----------------
 
 export const stopSignalRConnections = async () => {
@@ -60,5 +80,10 @@ export const stopSignalRConnections = async () => {
     if (communityConnection) {
         await communityConnection.stop();
         communityConnection = null;
+    }
+
+    if (friendConnection) {
+        await friendConnection.stop();
+        friendConnection = null;
     }
 };
