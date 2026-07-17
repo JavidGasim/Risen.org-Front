@@ -3,9 +3,16 @@ import { getFriendSignalRConnection } from "../services/signalrService";
 
 export const useFriendSignalR = ({ refreshFriendships }) => {
     useEffect(() => {
+        console.log("Friend hook mounted");
+
         const conn = getFriendSignalRConnection();
 
+        console.log(conn);
+
+
         if (!conn) return;
+
+
 
         const refresh = async () => {
             await refreshFriendships();
