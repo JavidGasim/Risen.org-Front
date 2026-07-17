@@ -1,32 +1,31 @@
 import { useEffect } from "react";
-import { getCookie } from "../utils/cookie";
-import { startFriendSignalRConnection } from "../services/signalrService";
+import { getFriendSignalRConnection } from "../services/signalrService";
 
 export const useFriendSignalR = ({ refreshFriendships }) => {
     useEffect(() => {
-        let conn;
+        console.log("Friend hook mounted");
 
-        const init = async () => {
-            const token = getCookie("risen_token");
-            if (!token) return;
+        const conn = getFriendSignalRConnection();
 
-            conn = await startFriendSignalRConnection(token);
+        console.log(conn);
 
-            conn.on("FriendRequestReceived", refreshFriendships);
-            conn.on("FriendRequestAccepted", refreshFriendships);
-            conn.on("FriendRequestRejected", refreshFriendships);
-            conn.on("FriendRemoved", refreshFriendships);
+        if (!conn) return;
+
+
+        const refresh = async () => {
+            await refreshFriendships();
         };
 
-        init();
+        conn.on("FriendRequestReceived", refresh);
+        conn.on("FriendRequestAccepted", refresh);
+        conn.on("FriendRequestRejected", refresh);
+        conn.on("FriendRemoved", refresh);
 
         return () => {
-            if (conn) {
-                conn.off("FriendRequestReceived", refreshFriendships);
-                conn.off("FriendRequestAccepted", refreshFriendships);
-                conn.off("FriendRequestRejected", refreshFriendships);
-                conn.off("FriendRemoved", refreshFriendships);
-            }
+            conn.off("FriendRequestReceived", refresh);
+            conn.off("FriendRequestAccepted", refresh);
+            conn.off("FriendRequestRejected", refresh);
+            conn.off("FriendRemoved", refresh);
         };
     }, [refreshFriendships]);
 };

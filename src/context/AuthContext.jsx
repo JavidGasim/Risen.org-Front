@@ -136,6 +136,9 @@ export const AuthProvider = ({ children }) => {
         const communityConn = await startCommunitySignalRConnection(token);
         const friendConn = await startFriendSignalRConnection(token);
 
+        console.log("Friend connection:", friendConn);
+        console.log("Friend state:", friendConn.state);
+
         if (!isMounted) return;
 
         console.log("SignalR connected");
