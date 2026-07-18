@@ -16,10 +16,30 @@ export const useFriendSignalR = ({ refreshFriendships }) => {
             await refreshFriendships();
         };
 
-        conn.on("FriendRequestReceived", refresh);
-        conn.on("FriendRequestAccepted", refresh);
-        conn.on("FriendRequestRejected", refresh);
-        conn.on("FriendRemoved", refresh);
+        conn.on("FriendRequestReceived", (data) => {
+            console.log("FriendRequestReceived", data);
+            refreshFriendships();
+        });
+
+        conn.on("FriendRequestSent", (data) => {
+            console.log("FriendRequestSent", data);
+            refreshFriendships();
+        });
+
+        conn.on("FriendRequestAccepted", (data) => {
+            console.log("FriendRequestAccepted", data);
+            refreshFriendships();
+        });
+
+        conn.on("FriendRequestRejected", () => {
+            console.log("FriendRequestRejected");
+            refreshFriendships();
+        });
+
+        conn.on("FriendRemoved", () => {
+            console.log("FriendRemoved");
+            refreshFriendships();
+        });
 
         return () => {
             conn.off("FriendRequestReceived", refresh);
