@@ -19,6 +19,8 @@ export const useFriendSignalR = ({ refreshFriendships }) => {
 
         const onFriendRequestReceived = (data) => {
             console.log("FriendRequestReceived", data);
+            console.log("EVENT:", data);
+
             refreshFriendships();
         };
 
