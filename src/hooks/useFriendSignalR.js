@@ -3,49 +3,47 @@ import { getFriendSignalRConnection } from "../services/signalrService";
 
 export const useFriendSignalR = ({ refreshFriendships }) => {
     useEffect(() => {
-        console.log("Friend hook mounted");
-
         const conn = getFriendSignalRConnection();
-
-        console.log(conn);
 
         if (!conn) return;
 
-
-        const refresh = async () => {
-            await refreshFriendships();
-        };
-
-        conn.on("FriendRequestReceived", (data) => {
+        const onFriendRequestReceived = (data) => {
             console.log("FriendRequestReceived", data);
             refreshFriendships();
-        });
+        };
 
-        conn.on("FriendRequestSent", (data) => {
+        const onFriendRequestSent = (data) => {
             console.log("FriendRequestSent", data);
             refreshFriendships();
-        });
+        };
 
-        conn.on("FriendRequestAccepted", (data) => {
+        const onFriendRequestAccepted = (data) => {
             console.log("FriendRequestAccepted", data);
             refreshFriendships();
-        });
+        };
 
-        conn.on("FriendRequestRejected", () => {
+        const onFriendRequestRejected = () => {
             console.log("FriendRequestRejected");
             refreshFriendships();
-        });
+        };
 
-        conn.on("FriendRemoved", () => {
+        const onFriendRemoved = () => {
             console.log("FriendRemoved");
             refreshFriendships();
-        });
+        };
+
+        conn.on("FriendRequestReceived", onFriendRequestReceived);
+        conn.on("FriendRequestSent", onFriendRequestSent);
+        conn.on("FriendRequestAccepted", onFriendRequestAccepted);
+        conn.on("FriendRequestRejected", onFriendRequestRejected);
+        conn.on("FriendRemoved", onFriendRemoved);
 
         return () => {
-            conn.off("FriendRequestReceived", refresh);
-            conn.off("FriendRequestAccepted", refresh);
-            conn.off("FriendRequestRejected", refresh);
-            conn.off("FriendRemoved", refresh);
+            conn.off("FriendRequestReceived", onFriendRequestReceived);
+            conn.off("FriendRequestSent", onFriendRequestSent);
+            conn.off("FriendRequestAccepted", onFriendRequestAccepted);
+            conn.off("FriendRequestRejected", onFriendRequestRejected);
+            conn.off("FriendRemoved", onFriendRemoved);
         };
     }, [refreshFriendships]);
 };

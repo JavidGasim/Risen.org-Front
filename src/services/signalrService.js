@@ -24,6 +24,8 @@ export const startNotificationSignalRConnection = async (token) => {
 
     await notificationConnection.start();
 
+    console.log("Notification SignalR Connected");
+
     return notificationConnection;
 };
 
@@ -45,6 +47,8 @@ export const startCommunitySignalRConnection = async (token) => {
 
     await communityConnection.start();
 
+    console.log("Community SignalR Connected");
+
     return communityConnection;
 };
 
@@ -63,6 +67,8 @@ export const startFriendSignalRConnection = async (token) => {
         .build();
 
     await friendConnection.start();
+
+    console.log("Friend SignalR Connected");
 
     return friendConnection;
 };
