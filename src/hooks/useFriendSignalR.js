@@ -3,9 +3,19 @@ import { getFriendSignalRConnection } from "../services/signalrService";
 
 export const useFriendSignalR = ({ refreshFriendships }) => {
     useEffect(() => {
+        console.log("Friend hook mounted");
+
         const conn = getFriendSignalRConnection();
 
-        if (!conn) return;
+        console.log("Connection:", conn);
+        console.log("State:", conn?.state);
+
+        if (!conn) {
+            console.log("Connection is NULL");
+            return;
+        }
+
+        console.log("Registering handlers");
 
         const onFriendRequestReceived = (data) => {
             console.log("FriendRequestReceived", data);
