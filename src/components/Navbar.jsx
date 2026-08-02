@@ -7,6 +7,7 @@ import {
   CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { loadFriendshipData, getRequestSenderName, getRequestId, acceptFriendRequest, rejectFriendRequest, getFriendshipErrorMessage } from '../utils/friendship';
+import { useFriendSignalR } from '../hooks/useFriendSignalR';
 
 const Navbar = () => {
   const { isAuthenticated, logout, user, stats } = useAuth();
@@ -76,6 +77,8 @@ const Navbar = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useFriendSignalR({ refreshFriendships: refreshNotifications });
 
   useEffect(() => {
     if (isAuthenticated) {

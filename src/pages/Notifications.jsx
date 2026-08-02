@@ -10,6 +10,7 @@ import {
   loadFriendshipData,
   rejectFriendRequest
 } from '../utils/friendship';
+import { useFriendSignalR } from '../hooks/useFriendSignalR';
 
 const Notifications = () => {
   const { user } = useAuth();
@@ -46,6 +47,8 @@ const Notifications = () => {
       setLoading(false);
     }
   };
+
+  useFriendSignalR({ refreshFriendships: refreshNotifications });
 
   useEffect(() => {
     refreshNotifications();
