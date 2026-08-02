@@ -141,28 +141,6 @@ export const searchUsers = async (query) => {
   }
 };
 
-const reconcileOutgoingRequests = (serverOutgoing) => {
-  const serverReceiverIds = new Set(
-    normalizeItems(serverOutgoing)
-      .map((request) => getRequestReceiverId(request))
-      .filter(Boolean)
-      .map((id) => String(id))
-  );
-
-  friendshipStore.outgoing = friendshipStore.outgoing.filter((entry) => {
-    const receiverId = getRequestReceiverId(entry);
-    return receiverId && serverReceiverIds.has(String(receiverId));
-  });
-
-  return [
-    ...normalizeItems(serverOutgoing),
-    ...friendshipStore.outgoing.filter((entry) => {
-      const receiverId = getRequestReceiverId(entry);
-      return receiverId && !serverReceiverIds.has(String(receiverId));
-    })
-  ];
-};
-
 export const loadFriendshipData = async (userId) => {
   void userId;
 
