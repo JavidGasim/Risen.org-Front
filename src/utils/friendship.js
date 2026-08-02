@@ -141,6 +141,28 @@ export const searchUsers = async (query) => {
   }
 };
 
+const reconcileOutgoingRequests = (serverOutgoing) => {
+  const serverReceiverIds = new Set(
+    normalizeItems(serverOutgoing)
+      .map((request) => getRequestReceiverId(request))
+      .filter(Boolean)
+      .map((id) => String(id))
+  );
+
+  friendshipStore.outgoing = friendshipStore.outgoing.filter((entry) => {
+    const receiverId = getRequestReceiverId(entry);
+    return receiverId && serverReceiverIds.has(String(receiverId));
+  });
+
+  return [
+    ...normalizeItems(serverOutgoing),
+    ...friendshipStore.outgoing.filter((entry) => {
+      const receiverId = getRequestReceiverId(entry);
+      return receiverId && !serverReceiverIds.has(String(receiverId));
+    })
+  ];
+};
+
 export const loadFriendshipData = async (userId) => {
   void userId;
 
@@ -151,13 +173,13 @@ export const loadFriendshipData = async (userId) => {
   ]);
 
   const friends = normalizeItems(friendsResponse?.data).map(normalizeFriendEntry).filter(Boolean);
-  const outgoing = normalizeItems(sentResponse?.data);
+  const outgoing = reconcileOutgoingRequests(sentResponse?.data);
   const incoming = normalizeItems(receivedResponse?.data);
 
   return {
     friends: [...friends, ...friendshipStore.friends.filter((entry) => !friends.some((friend) => getUserId(friend) && getUserId(friend) === getUserId(entry)))],
     incoming,
-    outgoing: [...outgoing, ...friendshipStore.outgoing.filter((entry) => !outgoing.some((request) => getRequestReceiverId(request) && getRequestReceiverId(request) === getRequestReceiverId(entry)))]
+    outgoing
   };
 };
 
