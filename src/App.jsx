@@ -15,6 +15,7 @@ import Leaderboards from './pages/Leaderboards';
 import Pricing from './pages/Pricing';
 import Posts from './pages/Posts';
 import Profile from './pages/Profile';
+import UserProfile from './pages/UserProfile';
 import Friends from './pages/Friends';
 import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -61,6 +62,7 @@ function App() {
           <Route path="/quest/:id" element={isAuthenticated ? <QuestDetail /> : <Navigate to="/login" />} />
           <Route path="/leaderboards" element={isAuthenticated ? <Leaderboards /> : <Navigate to="/login" />} />
           <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
+          <Route path="/profile/:userId" element={isAuthenticated ? <UserProfile /> : <Navigate to="/login" />} />
           <Route path="/pricing" element={<Pricing />} />
           
           {/* Admin Routes */}

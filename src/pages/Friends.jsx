@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Search, UserPlus, UserCheck, UserX, Loader2, Users as UsersIcon } from 'lucide-react';
 import {
@@ -205,7 +206,9 @@ const Friends = () => {
               return (
                 <div key={targetId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div>
-                    <div style={{ fontWeight: 700, color: '#F8FAFC' }}>{getUserDisplayName(candidate)}</div>
+                    <Link to={`/profile/${targetId}`} style={{ textDecoration: 'none' }}>
+                      <div style={{ fontWeight: 700, color: '#F8FAFC' }}>{getUserDisplayName(candidate)}</div>
+                    </Link>
                     <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>{candidate.email || 'No email shared'}</div>
                   </div>
                   <button
