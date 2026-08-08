@@ -16,7 +16,8 @@ import {
   Users,
   MapPin,
   Loader2,
-  Globe
+  Globe,
+  Settings as SettingsIcon
 } from 'lucide-react';
 
 const profileEndpoints = [
@@ -199,9 +200,17 @@ const UserProfile = () => {
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto' }} className="fade-in">
-      <button className="btn btn-outline" onClick={() => navigate(-1)} style={{ marginBottom: '24px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-        <ArrowLeft size={16} /> Back
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', gap: '12px' }}>
+        <button className="btn btn-outline" onClick={() => navigate(-1)} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <ArrowLeft size={16} /> Back
+        </button>
+
+        {isOwnProfile && (
+          <button className="btn btn-primary" onClick={() => navigate('/profile')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <SettingsIcon size={16} /> Settings
+          </button>
+        )}
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '28px', marginBottom: '32px' }}>
         <div className="premium-card slide-up" style={{ padding: '32px' }}>
