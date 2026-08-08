@@ -14,22 +14,6 @@ const diffMap = {
   4: { label: 'Expert', color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
 };
 
-const getDifficultyMeta = (quest) => {
-  const rawValue = quest?.difficulty ?? quest?.difficultyLevel ?? quest?.difficulty_level ?? quest?.complexity ?? quest?.level;
-
-  if (typeof rawValue === 'string') {
-    const normalized = rawValue.toLowerCase();
-    if (normalized.includes('easy')) return diffMap[1];
-    if (normalized.includes('medium')) return diffMap[2];
-    if (normalized.includes('hard')) return diffMap[3];
-    if (normalized.includes('expert')) return diffMap[4];
-  }
-
-  if (typeof rawValue === 'number') return diffMap[rawValue] || diffMap[1];
-
-  return diffMap[1];
-};
-
 const Quest = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
@@ -270,7 +254,7 @@ const Quest = () => {
                     (q.selectedOptionIndex !== undefined && q.selectedOptionIndex !== null)
                   );
 
-                  const d = getDifficultyMeta(q);
+                  const d = diffMap[q.difficulty] || diffMap[1];
                   const subjectName = getSubjectName(q.subject_id || q.subjectId || q.subjectCode || q.subjectcode);
 
                   return (
@@ -289,24 +273,6 @@ const Quest = () => {
                             filter: isLockedPremium ? 'blur(5px)' : 'none',
                             userSelect: isLockedPremium ? 'none' : 'auto'
                           }}>{q.title || q.questionText || 'Premium Content Module'}</span>
-                        </div>
-                        <div style={{ marginTop: '8px' }}>
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '4px 10px',
-                            borderRadius: '999px',
-                            background: d.bg,
-                            color: d.color,
-                            fontSize: '0.72rem',
-                            fontWeight: 800,
-                            textTransform: 'uppercase',
-                            letterSpacing: '1px',
-                            border: `1px solid ${d.color}22`
-                          }}>
-                            Difficulty: {d.label}
-                          </span>
                         </div>
                       </div>
 
