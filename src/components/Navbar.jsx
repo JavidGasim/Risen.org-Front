@@ -28,6 +28,14 @@ const Navbar = () => {
     navigate('/');
   };
 
+  const handleViewProfile = () => {
+    setIsProfileOpen(false);
+    const userId = user?.id || user?.userId;
+    if (userId) {
+      navigate(`/profile/${userId}`);
+    }
+  };
+
   const refreshNotifications = async () => {
     if (!user?.id) return;
 
@@ -271,21 +279,20 @@ const Navbar = () => {
                   <span style={{ fontSize: '1.1rem' }}>{stats?.risenScore?.toFixed(2) || '0.00'}</span>
                </div>
                
-                <Link 
-                 to="/profile"
-                 onClick={() => setIsProfileOpen(false)}
+                <button
+                 onClick={handleViewProfile}
                  style={{ 
                    width: '100%', padding: '14px', borderRadius: '14px', 
                    background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', 
                    color: '#F8FAFC', cursor: 'pointer', display: 'flex', alignItems: 'center', 
                    justifyContent: 'center', gap: '10px', fontWeight: 700, transition: 'all 0.2s',
-                   textDecoration: 'none', marginBottom: '8px'
+                   marginBottom: '8px'
                  }}
                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
                 >
-                  <User size={20} /> Settings
-                </Link>
+                  <User size={20} /> View Profile
+                </button>
                 
                <button 
                 onClick={handleLogout}
