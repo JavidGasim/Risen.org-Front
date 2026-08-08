@@ -68,6 +68,14 @@ const formatDate = (value) => {
 
 const getAttemptCreatedDate = (attempt) => {
   const candidates = [
+    attempt?.completedDateUtc,
+    attempt?.completedDateUTC,
+    attempt?.completedDate,
+    attempt?.completed_date,
+    attempt?.completedAt,
+    attempt?.completed_at,
+    attempt?.finishedAt,
+    attempt?.finished_at,
     attempt?.createdAt,
     attempt?.created_at,
     attempt?.createdDate,
@@ -78,8 +86,6 @@ const getAttemptCreatedDate = (attempt) => {
     attempt?.Date,
     attempt?.submittedAt,
     attempt?.submitted_at,
-    attempt?.completedAt,
-    attempt?.completed_at,
     attempt?.submittedOn,
     attempt?.submitted_on,
     attempt?.timestamp,
