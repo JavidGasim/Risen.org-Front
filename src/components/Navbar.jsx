@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   ShieldAlert, Zap, Compass, Trophy, User, 
   Sparkles, Target, LogOut, GraduationCap, Star, Activity, ChevronDown, Heart, Bell, Users,
-  CheckCircle2, AlertCircle
+  CheckCircle2, AlertCircle, Loader2
 } from 'lucide-react';
 import { loadFriendshipData, getRequestSenderName, getRequestId, acceptFriendRequest, rejectFriendRequest, getFriendshipErrorMessage } from '../utils/friendship';
 import { useFriendSignalR } from '../hooks/useFriendSignalR';
@@ -20,6 +20,7 @@ const Navbar = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
+  const profileMenuRef = useRef(null);
 
   const handleLogout = () => {
     setIsProfileOpen(false);
@@ -67,10 +68,13 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      const isProfileClickInside = dropdownRef.current?.contains(event.target) || profileMenuRef.current?.contains(event.target);
+      const isNotificationClickInside = notificationsRef.current?.contains(event.target);
+
+      if (!isProfileClickInside) {
         setIsProfileOpen(false);
       }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+      if (!isNotificationClickInside) {
         setIsNotificationsOpen(false);
       }
     };
@@ -230,7 +234,7 @@ const Navbar = () => {
         )}
 
         {isProfileOpen && (
-          <div className="fade-in slide-up app-profile-menu" style={{
+          <div ref={profileMenuRef} className="fade-in slide-up app-profile-menu" style={{
             position: 'absolute', top: '120%', right: 0, width: '320px',
             background: '#0F172A', border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: '24px', boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
