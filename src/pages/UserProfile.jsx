@@ -194,41 +194,52 @@ const UserProfile = () => {
   const profileStreak = getProfileMetric(profile, ['currentStreak', 'current_streak', 'streak', 'streakDays', 'streak_days', 'stats.currentStreak', 'stats.current_streak']);
   const profileTotalXp = getProfileMetric(profile, ['totalXp', 'total_xp', 'xp', 'stats.totalXp', 'stats.total_xp', 'stats.xp']);
 
-  const activityDays = useMemo(() => {
-    const today = new Date();
-    const days = [];
-    const statsMap = {};
-
-    for (let i = 34; i >= 0; i -= 1) {
-      const day = new Date(today);
-      day.setDate(day.getDate() - i);
-      const key = day.toISOString().split('T')[0];
-      days.push({ key, date: day });
-      statsMap[key] = { date: day, total: 0, success: 0, fail: 0 };
-    }
+  const activityMonths = useMemo(() => {
+    const monthStats = {};
 
     attempts.forEach((attempt) => {
       const date = getAttemptCreatedDate(attempt);
       if (Number.isNaN(date.getTime())) return;
-      const key = date.toISOString().split('T')[0];
-      if (!statsMap[key]) return;
+
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthStats[key]) {
+        monthStats[key] = { year: date.getFullYear(), month: date.getMonth(), total: 0, success: 0, fail: 0 };
+      }
+
+      monthStats[key].total += 1;
       const isSuccess = getAttemptIsCorrect(attempt);
-      statsMap[key].total += 1;
-      if (isSuccess) statsMap[key].success += 1;
-      else statsMap[key].fail += 1;
+      if (isSuccess) monthStats[key].success += 1;
+      else monthStats[key].fail += 1;
     });
 
-    return days.map((day) => {
-      const dayStats = statsMap[day.key];
-      const color = dayStats.total === 0
-        ? '#0F172A'
-        : dayStats.success === dayStats.total
-          ? '#10B981'
-          : dayStats.success > 0
-            ? '#F59E0B'
-            : '#EF4444';
-      return { ...day, ...dayStats, color };
-    });
+    const now = new Date();
+    const year = now.getFullYear();
+    const months = [];
+
+    for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+      const date = new Date(year, monthIndex, 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const stats = monthStats[key] || { total: 0, success: 0, fail: 0 };
+      const maxTotal = Math.max(1, ...Object.values(monthStats).map((item) => item.total));
+      const intensity = stats.total === 0 ? 0 : Math.min(1, stats.total / maxTotal);
+
+      let color = '#0F172A';
+      if (stats.total > 0) {
+        if (stats.success === stats.total) color = `rgba(16, 185, 129, ${0.2 + intensity * 0.8})`;
+        else if (stats.success > 0) color = `rgba(245, 158, 11, ${0.2 + intensity * 0.8})`;
+        else color = `rgba(239, 68, 68, ${0.2 + intensity * 0.8})`;
+      }
+
+      months.push({
+        key,
+        label: date.toLocaleString('en-US', { month: 'short' }),
+        stats,
+        intensity,
+        color
+      });
+    }
+
+    return months;
   }, [attempts]);
 
   const summary = useMemo(() => {
@@ -397,27 +408,35 @@ const UserProfile = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', fontWeight: 700, color: '#F8FAFC' }}>
               <CalendarDays size={18} /> Activity Calendar
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '6px' }}>
-              {activityDays.map((day) => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '8px' }}>
+              {activityMonths.map((month) => (
                 <div
-                  key={day.key}
-                  title={`${day.key} — ${day.total} attempt${day.total === 1 ? '' : 's'}`}
+                  key={month.key}
+                  title={`${month.label} — ${month.stats.total} attempt${month.stats.total === 1 ? '' : 's'}`}
                   style={{
-                    width: '100%',
-                    minHeight: '20px',
-                    borderRadius: '6px',
-                    background: day.color,
-                    border: day.total === 0 ? '1px solid rgba(148,164,184,0.18)' : '1px solid transparent'
+                    minHeight: '44px',
+                    borderRadius: '10px',
+                    background: month.color,
+                    border: month.stats.total === 0 ? '1px solid rgba(148,164,184,0.18)' : '1px solid transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: month.stats.total === 0 ? '#64748B' : '#F8FAFC',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    padding: '8px'
                   }}
-                />
+                >
+                  {month.label}
+                </div>
               ))}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '18px', color: '#94A3B8', fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '18px', color: '#94A3B8', fontSize: '0.85rem', flexWrap: 'wrap' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#0F172A', border: '1px solid rgba(148,164,184,0.18)', borderRadius: '4px' }} /> No activity</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#EF4444', borderRadius: '4px' }} /> Failed</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#F59E0B', borderRadius: '4px' }} /> Mixed</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#10B981', borderRadius: '4px' }} /> All success</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: 'rgba(239, 68, 68, 0.7)', borderRadius: '4px' }} /> Failed</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: 'rgba(245, 158, 11, 0.7)', borderRadius: '4px' }} /> Mixed</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: 'rgba(16, 185, 129, 0.7)', borderRadius: '4px' }} /> All success</span>
             </div>
           </div>
         </div>
