@@ -28,9 +28,12 @@ const Navbar = () => {
     navigate('/');
   };
 
-  const handleGoToSettings = () => {
+  const handleViewProfile = () => {
     setIsProfileOpen(false);
-    navigate('/profile');
+    const userId = user?.id || user?.userId;
+    if (userId) {
+      navigate(`/profile/${userId}`);
+    }
   };
 
   const refreshNotifications = async () => {
@@ -277,7 +280,7 @@ const Navbar = () => {
                </div>
                
                 <button
-                 onClick={handleGoToSettings}
+                 onClick={handleViewProfile}
                  style={{ 
                    width: '100%', padding: '14px', borderRadius: '14px', 
                    background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', 
@@ -288,7 +291,7 @@ const Navbar = () => {
                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
                 >
-                  <User size={20} /> Settings
+                  <User size={20} /> View Profile
                 </button>
                 
                <button 
