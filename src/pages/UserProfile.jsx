@@ -365,7 +365,9 @@ const UserProfile = () => {
                 <ShieldCheck size={18} color="#6366F1" />
                 <span style={{ fontWeight: 700 }}>Joined</span>
               </div>
-              <div style={{ color: '#94A3B8' }}>{profile.createdAt ? formatDate(profile.createdAt) : profile.createdDate ? formatDate(profile.createdDate) : 'Unknown'}</div>
+              <div style={{ color: '#94A3B8' }}>
+                {formatDate(profile.createdAtUtc || profile.createdAt || profile.created_at || profile.createdDate || profile.created_date || profile.createdOn || profile.created_on || profile.joinedAt || profile.joined_at || profile.dateCreated || profile.created)}
+              </div>
             </div>
             <div style={{ padding: '18px', borderRadius: '18px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
