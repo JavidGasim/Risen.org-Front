@@ -28,15 +28,73 @@ const profileEndpoints = [
   (id) => api.get(`/Users/profile/${id}`)
 ];
 
+const parseDateValue = (value) => {
+  if (!value && value !== 0) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+
+  if (typeof value === 'number') {
+    const asMillis = value > 1e12 ? value : value * 1000;
+    const date = new Date(asMillis);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const aspNetMatch = trimmed.match(/^\/Date\((-?\d+)(?:[+-]\d+)?\)\/$/i);
+    if (aspNetMatch) {
+      const date = new Date(Number(aspNetMatch[1]));
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    const date = new Date(trimmed);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  if (typeof value === 'object') {
+    const nested = value.value ?? value.date ?? value.datetime ?? value.timestamp ?? value.time ?? value.createdAt ?? value.created_at;
+    return parseDateValue(nested);
+  }
+
+  return null;
+};
+
 const formatDate = (value) => {
-  const date = new Date(value);
+  const date = parseDateValue(value);
+  if (!date) return 'Unknown';
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
 };
 
 const getAttemptCreatedDate = (attempt) => {
-  return new Date(
-    attempt.createdAt || attempt.created_at || attempt.createdDate || attempt.created_date || attempt.date || attempt.Date || attempt.submittedAt || attempt.submitted_at || Date.now()
-  );
+  const candidates = [
+    attempt?.createdAt,
+    attempt?.created_at,
+    attempt?.createdDate,
+    attempt?.created_date,
+    attempt?.createdOn,
+    attempt?.created_on,
+    attempt?.date,
+    attempt?.Date,
+    attempt?.submittedAt,
+    attempt?.submitted_at,
+    attempt?.completedAt,
+    attempt?.completed_at,
+    attempt?.submittedOn,
+    attempt?.submitted_on,
+    attempt?.timestamp,
+    attempt?.timeStamp,
+    attempt?.created,
+    attempt?.updatedAt,
+    attempt?.updated_at
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = parseDateValue(candidate);
+    if (parsed) return parsed;
+  }
+
+  return new Date();
 };
 
 const getAttemptUserId = (attempt) => {
@@ -64,6 +122,56 @@ const getUserProfileResult = async (userId) => {
   return candidates.find((item) => String(getUserId(item)) === String(userId)) || null;
 };
 
+const getUserRankResult = async (userId) => {
+  if (!userId) return null;
+
+  const endpoints = [
+    () => api.get('/Leaderboards/my-rank', { params: { userId } }),
+    () => api.get('/Leaderboards/rank', { params: { userId } }),
+    () => api.get('/Leaderboards/user-rank', { params: { userId } }),
+    () => api.get(`/Leaderboards/${userId}/rank`),
+    () => api.get(`/Leaderboards/rank/${userId}`),
+    () => api.get(`/Leaderboards/user/${userId}/rank`)
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await endpoint();
+      const payload = response?.data;
+      if (!payload) continue;
+
+      if (typeof payload === 'number') return payload;
+      if (typeof payload === 'string') return payload;
+      if (typeof payload?.rank === 'number' || typeof payload?.rank === 'string') return payload.rank;
+      if (typeof payload?.value === 'number' || typeof payload?.value === 'string') return payload.value;
+      if (typeof payload?.position === 'number' || typeof payload?.position === 'string') return payload.position;
+      if (typeof payload?.globalRank === 'number' || typeof payload?.globalRank === 'string') return payload.globalRank;
+      if (typeof payload?.global_rank === 'number' || typeof payload?.global_rank === 'string') return payload.global_rank;
+      if (typeof payload?.data?.rank === 'number' || typeof payload?.data?.rank === 'string') return payload.data.rank;
+      if (typeof payload?.data?.globalRank === 'number' || typeof payload?.data?.globalRank === 'string') return payload.data.globalRank;
+    } catch (error) {
+      if (error?.response?.status === 404) continue;
+      if (error?.response?.status === 400) continue;
+    }
+  }
+
+  return null;
+};
+
+const getProfileMetric = (profile, paths) => {
+  const candidates = [profile?.stats, profile, profile?.profile, profile?.data, profile?.leaderboard];
+
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== 'object') continue;
+    for (const path of paths) {
+      const value = path.split('.').reduce((current, key) => current?.[key], candidate);
+      if (value !== undefined && value !== null && value !== '') return value;
+    }
+  }
+
+  return null;
+};
+
 const UserProfile = () => {
   const { user: currentUser } = useAuth();
   const { userId } = useParams();
@@ -76,6 +184,9 @@ const UserProfile = () => {
   const isOwnProfile = !userId || String(getUserId(currentUser)) === String(userId);
   const profileKey = isOwnProfile ? getUserId(currentUser) : userId;
   const displayName = getUserDisplayName(profile || currentUser || {});
+  const profileRank = getProfileMetric(profile, ['rank', 'globalRank', 'global_rank', 'leaderboard.rank', 'leaderboard.globalRank', 'leaderboard.global_rank', 'position', 'globalRankPosition']);
+  const profileStreak = getProfileMetric(profile, ['currentStreak', 'current_streak', 'streak', 'streakDays', 'streak_days', 'stats.currentStreak', 'stats.current_streak']);
+  const profileTotalXp = getProfileMetric(profile, ['totalXp', 'total_xp', 'xp', 'stats.totalXp', 'stats.total_xp', 'stats.xp']);
 
   const activityDays = useMemo(() => {
     const today = new Date();
@@ -150,7 +261,17 @@ const UserProfile = () => {
           return;
         }
 
-        setProfile(fetchedProfile);
+        const rankResult = await getUserRankResult(profileKey);
+        const resolvedProfile = {
+          ...fetchedProfile,
+          stats: {
+            ...(fetchedProfile?.stats || {}),
+            globalRank: rankResult ?? fetchedProfile?.stats?.globalRank ?? fetchedProfile?.stats?.global_rank ?? fetchedProfile?.rank ?? fetchedProfile?.globalRank ?? fetchedProfile?.global_rank ?? fetchedProfile?.leaderboard?.rank ?? fetchedProfile?.leaderboard?.globalRank,
+            currentStreak: fetchedProfile?.stats?.currentStreak ?? fetchedProfile?.stats?.current_streak ?? fetchedProfile?.currentStreak ?? fetchedProfile?.current_streak ?? fetchedProfile?.streak ?? fetchedProfile?.streakDays ?? fetchedProfile?.streak_days,
+            totalXp: fetchedProfile?.stats?.totalXp ?? fetchedProfile?.stats?.total_xp ?? fetchedProfile?.totalXp ?? fetchedProfile?.total_xp ?? fetchedProfile?.xp
+          }
+        };
+        setProfile(resolvedProfile);
 
         const attemptResponse = await api.get('/Quest-Attempts', {
           params: {
@@ -303,9 +424,9 @@ const UserProfile = () => {
               {profile.bio || profile.about || 'No profile bio has been added yet.'}
             </div>
             <div style={{ display: 'grid', gap: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><Star size={16} color="#F59E0B" /><span style={{ color: '#F8FAFC', fontWeight: 700 }}>Current streak:</span> <span style={{ color: '#94A3B8' }}>{profile.stats?.currentStreak ?? profile.stats?.current_streak ?? 'N/A'}</span></div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><Trophy size={16} color="#6366F1" /><span style={{ color: '#F8FAFC', fontWeight: 700 }}>Global rank:</span> <span style={{ color: '#94A3B8' }}>{profile.stats?.globalRank ?? profile.stats?.global_rank ?? 'N/A'}</span></div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><Globe size={16} color="#10B981" /><span style={{ color: '#F8FAFC', fontWeight: 700 }}>Total XP:</span> <span style={{ color: '#94A3B8' }}>{profile.stats?.totalXp ?? profile.stats?.total_xp ?? profile.totalXp ?? profile.total_xp ?? 'N/A'}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><Star size={16} color="#F59E0B" /><span style={{ color: '#F8FAFC', fontWeight: 700 }}>Current streak:</span> <span style={{ color: '#94A3B8' }}>{profileStreak != null && profileStreak !== '' ? profileStreak : 'N/A'}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><Trophy size={16} color="#6366F1" /><span style={{ color: '#F8FAFC', fontWeight: 700 }}>Global rank:</span> <span style={{ color: '#94A3B8' }}>{profileRank != null && profileRank !== '' ? `#${profileRank}` : 'N/A'}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><Globe size={16} color="#10B981" /><span style={{ color: '#F8FAFC', fontWeight: 700 }}>Total XP:</span> <span style={{ color: '#94A3B8' }}>{profileTotalXp != null && profileTotalXp !== '' ? profileTotalXp.toLocaleString() : 'N/A'}</span></div>
             </div>
           </div>
 
