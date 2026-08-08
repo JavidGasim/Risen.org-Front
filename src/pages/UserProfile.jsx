@@ -194,56 +194,41 @@ const UserProfile = () => {
   const profileStreak = getProfileMetric(profile, ['currentStreak', 'current_streak', 'streak', 'streakDays', 'streak_days', 'stats.currentStreak', 'stats.current_streak']);
   const profileTotalXp = getProfileMetric(profile, ['totalXp', 'total_xp', 'xp', 'stats.totalXp', 'stats.total_xp', 'stats.xp']);
 
-  const activityHeatmap = useMemo(() => {
-    const MS = 1000 * 60 * 60 * 24;
-    const end = new Date();
-    end.setHours(0, 0, 0, 0);
-    const start = new Date(end);
-    start.setDate(end.getDate() - 364);
-    start.setHours(0, 0, 0, 0);
+  const activityDays = useMemo(() => {
+    const today = new Date();
+    const days = [];
+    const statsMap = {};
 
-    // Align start to the previous Sunday so weeks line up (Sunday-first columns)
-    const startOfWeek = new Date(start);
-    startOfWeek.setDate(start.getDate() - start.getDay());
-
-    const dayCounts = {};
-    attempts.forEach((attempt) => {
-      const d = getAttemptCreatedDate(attempt);
-      if (Number.isNaN(d.getTime())) return;
-      const key = d.toISOString().split('T')[0];
-      dayCounts[key] = (dayCounts[key] || 0) + 1;
-    });
-
-    // Build weeks (columns). Each week is an array of 7 day objects (Sun..Sat)
-    const weeks = [];
-    for (let t = new Date(startOfWeek); t <= end; t.setDate(t.getDate() + 1)) {
-      const day = new Date(t);
-      const dayIndex = Math.floor((day - startOfWeek) / MS);
-      const weekIndex = Math.floor(dayIndex / 7);
-      if (!weeks[weekIndex]) weeks[weekIndex] = [];
+    for (let i = 34; i >= 0; i -= 1) {
+      const day = new Date(today);
+      day.setDate(day.getDate() - i);
       const key = day.toISOString().split('T')[0];
-      weeks[weekIndex].push({
-        date: new Date(day),
-        key,
-        count: dayCounts[key] || 0
-      });
+      days.push({ key, date: day });
+      statsMap[key] = { date: day, total: 0, success: 0, fail: 0 };
     }
 
-    const allCounts = Object.values(dayCounts);
-    const maxCount = allCounts.length ? Math.max(...allCounts) : 1;
-
-    // Compute month labels positioned at the first week where month starts
-    const monthLabels = {};
-    weeks.forEach((week, wi) => {
-      for (const day of week) {
-        if (day.date.getDate() === 1) {
-          monthLabels[wi] = day.date.toLocaleString('en-US', { month: 'short' });
-          break;
-        }
-      }
+    attempts.forEach((attempt) => {
+      const date = getAttemptCreatedDate(attempt);
+      if (Number.isNaN(date.getTime())) return;
+      const key = date.toISOString().split('T')[0];
+      if (!statsMap[key]) return;
+      const isSuccess = getAttemptIsCorrect(attempt);
+      statsMap[key].total += 1;
+      if (isSuccess) statsMap[key].success += 1;
+      else statsMap[key].fail += 1;
     });
 
-    return { weeks, maxCount, monthLabels };
+    return days.map((day) => {
+      const dayStats = statsMap[day.key];
+      const color = dayStats.total === 0
+        ? '#0F172A'
+        : dayStats.success === dayStats.total
+          ? '#10B981'
+          : dayStats.success > 0
+            ? '#F59E0B'
+            : '#EF4444';
+      return { ...day, ...dayStats, color };
+    });
   }, [attempts]);
 
   const summary = useMemo(() => {
@@ -412,45 +397,27 @@ const UserProfile = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', fontWeight: 700, color: '#F8FAFC' }}>
               <CalendarDays size={18} /> Activity Calendar
             </div>
-            {/* GitHub-style yearly heatmap */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {/* Month labels row aligned with week columns */}
-              <div style={{ display: 'flex', gap: '4px', paddingLeft: '36px' }}>
-                {activityHeatmap.weeks.map((_, wi) => (
-                  <div key={wi} style={{ width: 16, textAlign: 'center', fontSize: '0.75rem', color: '#94A3B8' }}>
-                    {activityHeatmap.monthLabels[wi] || ''}
-                  </div>
-                ))}
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '6px' }}>
+              {activityDays.map((day) => (
+                <div
+                  key={day.key}
+                  title={`${day.key} — ${day.total} attempt${day.total === 1 ? '' : 's'}`}
+                  style={{
+                    width: '100%',
+                    minHeight: '20px',
+                    borderRadius: '6px',
+                    background: day.color,
+                    border: day.total === 0 ? '1px solid rgba(148,164,184,0.18)' : '1px solid transparent'
+                  }}
+                />
+              ))}
+            </div>
 
-              <div style={{ display: 'flex', gap: '6px', paddingLeft: '36px', alignItems: 'flex-start' }}>
-                {activityHeatmap.weeks.map((week, wi) => (
-                  <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {week.map((day) => {
-                      const intensity = activityHeatmap.maxCount ? Math.min(1, day.count / activityHeatmap.maxCount) : 0;
-                      const bg = day.count === 0 ? '#0F172A' : `rgba(16,185,129,${0.15 + intensity * 0.8})`;
-                      return (
-                        <div
-                          key={day.key}
-                          title={`${day.key} — ${day.count} attempt${day.count === 1 ? '' : 's'}`}
-                          style={{
-                            width: 16,
-                            height: 12,
-                            borderRadius: 3,
-                            background: bg,
-                            border: day.count === 0 ? '1px solid rgba(148,164,184,0.08)' : '1px solid rgba(0,0,0,0.12)'
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', marginTop: '12px', color: '#94A3B8', fontSize: '0.85rem', alignItems: 'center' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '14px', height: '14px', background: '#0F172A', border: '1px solid rgba(148,164,184,0.18)', borderRadius: '4px' }} /> No activity</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '14px', height: '14px', background: 'rgba(16,185,129,0.4)', borderRadius: '4px' }} /> Active</span>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '18px', color: '#94A3B8', fontSize: '0.85rem' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#0F172A', border: '1px solid rgba(148,164,184,0.18)', borderRadius: '4px' }} /> No activity</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#EF4444', borderRadius: '4px' }} /> Failed</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#F59E0B', borderRadius: '4px' }} /> Mixed</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#10B981', borderRadius: '4px' }} /> All success</span>
             </div>
           </div>
         </div>
