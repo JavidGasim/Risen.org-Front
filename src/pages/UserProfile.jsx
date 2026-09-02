@@ -430,35 +430,51 @@ const UserProfile = () => {
                 <div>Sat</div>
               </div>
               <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', overflowX: 'auto', paddingBottom: '6px' }}>
-                {activityDays.weeks.map((week, wi) => (
-                  <div key={`w-${wi}`} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
-                    {/** small month label spot above the column */}
-                    <div style={{ height: '14px', fontSize: '0.75rem', color: '#94A3B8' }}>
-                      {(() => {
-                        const firstInRange = week.find((d) => d.inRange && d.date.getDate() === 1);
-                        if (firstInRange) return firstInRange.date.toLocaleString('en-US', { month: 'short' });
-                        // alternatively show month when week contains the 1st
-                        const anyInRange = week.find((d) => d.inRange);
-                        if (!anyInRange) return '';
-                        const first = week[0];
-                        return first && first.inRange && first.date.getDate() <= 7 ? first.date.toLocaleString('en-US', { month: 'short' }) : '';
-                      })()}
+                {activityDays.weeks.map((week, wi) => {
+                  const weekMonth = week.find((d) => d.inRange)?.date?.getMonth();
+                  const prevWeek = activityDays.weeks[wi - 1];
+                  const prevMonth = prevWeek ? prevWeek.find((d) => d.inRange)?.date?.getMonth() : null;
+                  const showSeparator = prevMonth !== null && weekMonth !== prevMonth;
+
+                  return (
+                    <div
+                      key={`w-${wi}`}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        alignItems: 'center',
+                        paddingLeft: showSeparator ? '8px' : '0',
+                        borderLeft: showSeparator ? '1px solid rgba(148,164,184,0.18)' : 'none'
+                      }}
+                    >
+                      {/** small month label spot above the column */}
+                      <div style={{ height: '14px', fontSize: '0.75rem', color: '#94A3B8' }}>
+                        {(() => {
+                          const firstInRange = week.find((d) => d.inRange && d.date.getDate() === 1);
+                          if (firstInRange) return firstInRange.date.toLocaleString('en-US', { month: 'short' });
+                          // alternatively show month when week contains the 1st
+                          const anyInRange = week.find((d) => d.inRange);
+                          if (!anyInRange) return '';
+                          const first = week[0];
+                          return first && first.inRange && first.date.getDate() <= 7 ? first.date.toLocaleString('en-US', { month: 'short' }) : '';
+                        })()}
+                      </div>
+                      {week.map((day) => (
+                        <div
+                          key={day.key}
+                          title={`${day.key} — ${day.total || 0} attempt${(day.total || 0) === 1 ? '' : 's'}`}
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '3px',
+                            background: day.color,
+                            border: (day.total || 0) === 0 ? '1px solid rgba(148,164,184,0.18)' : '1px solid transparent'
+                          }}
+                        />
+                      ))}
                     </div>
-                    {week.map((day) => (
-                      <div
-                        key={day.key}
-                        title={`${day.key} — ${day.total || 0} attempt${(day.total || 0) === 1 ? '' : 's'}`}
-                        style={{
-                          width: '12px',
-                          height: '12px',
-                          borderRadius: '3px',
-                          background: day.color,
-                          border: (day.total || 0) === 0 ? '1px solid rgba(148,164,184,0.18)' : '1px solid transparent'
-                        }}
-                      />
-                    ))}
-                  </div>
-                ))}
+                )})}
               </div>
             </div>
 
