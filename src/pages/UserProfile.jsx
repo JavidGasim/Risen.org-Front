@@ -196,15 +196,20 @@ const UserProfile = () => {
 
   const activityDays = useMemo(() => {
     const today = new Date();
-    const days = [];
+    const daysInPast = 365;
+    const start = new Date(today);
+    start.setDate(start.getDate() - (daysInPast - 1));
+
+    // Align to previous Sunday so weeks start on Sunday (like contribution calendar)
+    const startSunday = new Date(start);
+    startSunday.setDate(startSunday.getDate() - startSunday.getDay());
+
     const statsMap = {};
 
-    for (let i = 34; i >= 0; i -= 1) {
-      const day = new Date(today);
-      day.setDate(day.getDate() - i);
-      const key = day.toISOString().split('T')[0];
-      days.push({ key, date: day });
-      statsMap[key] = { date: day, total: 0, success: 0, fail: 0 };
+    // initialize statsMap for the window we care about
+    for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+      const key = new Date(d).toISOString().split('T')[0];
+      statsMap[key] = { date: new Date(d), total: 0, success: 0, fail: 0 };
     }
 
     attempts.forEach((attempt) => {
@@ -218,17 +223,29 @@ const UserProfile = () => {
       else statsMap[key].fail += 1;
     });
 
-    return days.map((day) => {
-      const dayStats = statsMap[day.key];
-      const color = dayStats.total === 0
+    // Build full range from startSunday to today, chunk into weeks
+    const days = [];
+    for (let d = new Date(startSunday); d <= today; d.setDate(d.getDate() + 1)) {
+      const key = new Date(d).toISOString().split('T')[0];
+      const inRange = key in statsMap;
+      const stats = statsMap[key] || { date: new Date(d), total: 0, success: 0, fail: 0 };
+      const color = stats.total === 0
         ? '#0F172A'
-        : dayStats.success === dayStats.total
+        : stats.success === stats.total
           ? '#10B981'
-          : dayStats.success > 0
+          : stats.success > 0
             ? '#F59E0B'
             : '#EF4444';
-      return { ...day, ...dayStats, color };
-    });
+      days.push({ key, date: new Date(d), ...stats, color, inRange });
+    }
+
+    // chunk into weeks (columns)
+    const weeks = [];
+    for (let i = 0; i < days.length; i += 7) {
+      weeks.push(days.slice(i, i + 7));
+    }
+
+    return { weeks, startSunday };
   }, [attempts]);
 
   const summary = useMemo(() => {
@@ -401,20 +418,48 @@ const UserProfile = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', fontWeight: 700, color: '#F8FAFC' }}>
               <CalendarDays size={18} /> Activity Calendar
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '6px' }}>
-              {activityDays.map((day) => (
-                <div
-                  key={day.key}
-                  title={`${day.key} — ${day.total} attempt${day.total === 1 ? '' : 's'}`}
-                  style={{
-                    width: '100%',
-                    minHeight: '20px',
-                    borderRadius: '6px',
-                    background: day.color,
-                    border: day.total === 0 ? '1px solid rgba(148,164,184,0.18)' : '1px solid transparent'
-                  }}
-                />
-              ))}
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginRight: '8px', fontSize: '0.75rem', color: '#94A3B8' }}>
+                <div style={{ height: '12px' }} />
+                <div>Sun</div>
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+              </div>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', overflowX: 'auto', paddingBottom: '6px' }}>
+                {activityDays.weeks.map((week, wi) => (
+                  <div key={`w-${wi}`} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                    {/** small month label spot above the column */}
+                    <div style={{ height: '14px', fontSize: '0.75rem', color: '#94A3B8' }}>
+                      {(() => {
+                        const firstInRange = week.find((d) => d.inRange && d.date.getDate() === 1);
+                        if (firstInRange) return firstInRange.date.toLocaleString('en-US', { month: 'short' });
+                        // alternatively show month when week contains the 1st
+                        const anyInRange = week.find((d) => d.inRange);
+                        if (!anyInRange) return '';
+                        const first = week[0];
+                        return first && first.inRange && first.date.getDate() <= 7 ? first.date.toLocaleString('en-US', { month: 'short' }) : '';
+                      })()}
+                    </div>
+                    {week.map((day) => (
+                      <div
+                        key={day.key}
+                        title={`${day.key} — ${day.total || 0} attempt${(day.total || 0) === 1 ? '' : 's'}`}
+                        style={{
+                          width: '12px',
+                          height: '12px',
+                          borderRadius: '3px',
+                          background: day.color,
+                          border: (day.total || 0) === 0 ? '1px solid rgba(148,164,184,0.18)' : '1px solid transparent'
+                        }}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '18px', color: '#94A3B8', fontSize: '0.85rem' }}>
