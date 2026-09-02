@@ -11,7 +11,7 @@ export default function AdminPosts() {
   const fetchPosts = async () => {
     try {
       const res = await api.get('/admin/posts');
-      setPosts(res.data || []);
+      setPosts(res.data.items || []);
     } finally {
       setLoading(false);
     }
