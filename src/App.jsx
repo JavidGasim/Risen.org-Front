@@ -26,6 +26,8 @@ import AdminQuests from './pages/admin/AdminQuests';
 import AdminPlans from './pages/admin/AdminPlans';
 import AdminLeagues from './pages/admin/AdminLeagues';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminPosts from './pages/admin/AdminPosts';
+import AdminComments from './pages/admin/AdminComments';
 import { useAuth } from './context/AuthContext';
 
 function App() {
@@ -73,6 +75,8 @@ function App() {
             <Route path="universities" element={<AdminUniversities />} />
             <Route path="subjects" element={<AdminSubjects />} />
             <Route path="quests" element={<AdminQuests />} />
+            <Route path="posts" element={<AdminPosts />} />
+            <Route path="comments" element={<AdminComments />} />
             <Route path="plans" element={<AdminPlans />} />
             <Route path="leagues" element={<AdminLeagues />} />
             <Route path="settings" element={<AdminSettings />} />
