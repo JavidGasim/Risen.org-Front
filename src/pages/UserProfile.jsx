@@ -418,7 +418,7 @@ const UserProfile = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', fontWeight: 700, color: '#F8FAFC' }}>
               <CalendarDays size={18} /> Activity Calendar
             </div>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginRight: '8px', fontSize: '0.75rem', color: '#94A3B8' }}>
                 <div style={{ height: '12px' }} />
                 <div>Sun</div>
@@ -429,7 +429,7 @@ const UserProfile = () => {
                 <div>Fri</div>
                 <div>Sat</div>
               </div>
-              <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', overflowX: 'auto', paddingBottom: '6px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', overflowX: 'auto', paddingBottom: '6px' }}>
                 {activityDays.weeks.map((week, wi) => {
                   const weekMonth = week.find((d) => d.inRange)?.date?.getMonth();
                   const prevWeek = activityDays.weeks[wi - 1];
@@ -442,7 +442,7 @@ const UserProfile = () => {
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '6px',
+                        gap: '8px',
                         alignItems: 'center',
                         paddingLeft: showSeparator ? '8px' : '0',
                         borderLeft: showSeparator ? '1px solid rgba(148,164,184,0.18)' : 'none'
@@ -461,28 +461,28 @@ const UserProfile = () => {
                         })()}
                       </div>
                       {week.map((day) => (
-                        <div
-                          key={day.key}
-                          title={`${day.key} — ${day.total || 0} attempt${(day.total || 0) === 1 ? '' : 's'}`}
-                          style={{
-                            width: '12px',
-                            height: '12px',
-                            borderRadius: '3px',
-                            background: day.color,
-                            border: (day.total || 0) === 0 ? '1px solid rgba(148,164,184,0.18)' : '1px solid transparent'
-                          }}
-                        />
-                      ))}
+                      <div
+                        key={day.key}
+                        title={`${day.key} — ${day.total || 0} attempt${(day.total || 0) === 1 ? '' : 's'}`}
+                        style={{
+                          width: '16px',
+                          height: '16px',
+                          borderRadius: '4px',
+                          background: day.color,
+                          border: (day.total || 0) === 0 ? '1px solid rgba(148,164,184,0.18)' : '1px solid transparent'
+                        }}
+                      />
+                    ))}
                     </div>
                 )})}
               </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '18px', color: '#94A3B8', fontSize: '0.85rem' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#0F172A', border: '1px solid rgba(148,164,184,0.18)', borderRadius: '4px' }} /> No activity</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#EF4444', borderRadius: '4px' }} /> Failed</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#F59E0B', borderRadius: '4px' }} /> Mixed</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '14px', height: '14px', background: '#10B981', borderRadius: '4px' }} /> All success</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '18px', height: '18px', background: '#0F172A', border: '1px solid rgba(148,164,184,0.18)', borderRadius: '4px' }} /> No activity</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '18px', height: '18px', background: '#EF4444', borderRadius: '4px' }} /> Failed</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '18px', height: '18px', background: '#F59E0B', borderRadius: '4px' }} /> Mixed</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><span style={{ width: '18px', height: '18px', background: '#10B981', borderRadius: '4px' }} /> All success</span>
             </div>
           </div>
         </div>
