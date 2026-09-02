@@ -78,6 +78,7 @@ export default function AdminComments() {
                   <th style={{ padding: '12px' }}>Comment</th>
                   <th style={{ padding: '12px' }}>Author</th>
                   <th style={{ padding: '12px' }}>Email</th>
+                  <th style={{ padding: '12px' }}>Writing Date</th>
                   <th style={{ padding: '12px' }}>Post</th>
                   <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -86,7 +87,7 @@ export default function AdminComments() {
               <tbody>
                 {comments.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>No comments found.</td>
+                    <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>No comments found.</td>
                   </tr>
                 ) : (
                   comments.map((comment) => (
@@ -104,6 +105,12 @@ export default function AdminComments() {
                       <td style={{ padding: '12px' }}>{comment.authorName || comment.author || comment.userName || comment.senderName || 'Unknown'}</td>
 
                       <td style={{ padding: '12px' }}>{(() => { const email = comment.senderEmail || comment.senderEmailAddress || comment.authorEmail || comment.user?.email || null; return email ? <a href={`mailto:${email}`} style={{ color: 'inherit' }}>{email}</a> : '—'; })()}</td>
+
+                      <td style={{ padding: '12px' }}>{(() => {
+                        const dateVal = comment.writingDate || comment.createdAt || comment.created_at || comment.date || comment.timestamp || comment.shareDate || null;
+                        const d = dateVal ? new Date(dateVal) : null;
+                        return d && !Number.isNaN(d.getTime()) ? d.toLocaleString() : '—';
+                      })()}</td>
 
                       <td style={{ padding: '12px' }}>{comment.postTitle || comment.post?.title || comment.postId || comment.post?.id || '—'}</td>
 
