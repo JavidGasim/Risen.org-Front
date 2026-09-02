@@ -124,6 +124,7 @@ export default function AdminPosts() {
                                     <th style={{ padding: '12px' }}>ID</th>
                                     <th style={{ padding: '12px' }}>Post</th>
                                     <th style={{ padding: '12px' }}>Author</th>
+                                    <th style={{ padding: '12px' }}>Email</th>
                                     <th style={{ padding: '12px' }}>Created</th>
                                     <th style={{ padding: '12px' }}>Likes</th>
                                     <th style={{ padding: '12px' }}>Comments</th>
@@ -139,10 +140,10 @@ export default function AdminPosts() {
                             </thead>
 
                             <tbody>
-                                {posts.length === 0 ? (
+                                    {posts.length === 0 ? (
                                     <tr>
                                         <td
-                                            colSpan={7}
+                                            colSpan={8}
                                             style={{
                                                 padding: '24px',
                                                 textAlign: 'center',
@@ -207,6 +208,19 @@ export default function AdminPosts() {
                                             {/* AUTHOR */}
                                             <td style={{ padding: '12px' }}>
                                                 {post.senderName || 'Unknown'}
+                                            </td>
+
+
+                                            {/* EMAIL */}
+                                            <td style={{ padding: '12px' }}>
+                                                {(() => {
+                                                    const email = post.senderEmail || post.senderEmailAddress || post.authorEmail || post.sender?.email || null;
+                                                    return email ? (
+                                                        <a href={`mailto:${email}`} style={{ color: 'inherit' }}>{email}</a>
+                                                    ) : (
+                                                        '—'
+                                                    );
+                                                })()}
                                             </td>
 
                                             {/* CREATED */}
