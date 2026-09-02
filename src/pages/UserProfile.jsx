@@ -100,7 +100,7 @@ const getAttemptCreatedDate = (attempt) => {
     if (parsed) return parsed;
   }
 
-  return new Date();
+  return null;
 };
 
 const getAttemptUserId = (attempt) => {
@@ -209,7 +209,7 @@ const UserProfile = () => {
 
     attempts.forEach((attempt) => {
       const date = getAttemptCreatedDate(attempt);
-      if (Number.isNaN(date.getTime())) return;
+      if (!date || Number.isNaN(date.getTime())) return;
       const key = date.toISOString().split('T')[0];
       if (!statsMap[key]) return;
       const isSuccess = getAttemptIsCorrect(attempt);
@@ -235,7 +235,11 @@ const UserProfile = () => {
     const total = attempts.length;
     const success = attempts.filter(getAttemptIsCorrect).length;
     const successRate = total ? Math.round((success / total) * 100) : 0;
-    const lastAttempt = attempts.slice().sort((a, b) => getAttemptCreatedDate(b) - getAttemptCreatedDate(a))[0];
+    const lastAttemptEntry = attempts
+      .map((a) => ({ attempt: a, date: getAttemptCreatedDate(a) }))
+      .filter((x) => x.date && !Number.isNaN(x.date.getTime()))
+      .sort((a, b) => b.date - a.date)[0];
+    const lastAttempt = lastAttemptEntry ? lastAttemptEntry.attempt : null;
     const lastActive = lastAttempt ? formatDate(getAttemptCreatedDate(lastAttempt)) : 'No activity yet';
 
     return { total, success, successRate, lastActive };
