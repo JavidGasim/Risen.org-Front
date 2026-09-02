@@ -6,7 +6,7 @@ export default function AdminPosts() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState(null);
-    const [editingValues, setEditingValues] = useState({ title: '', content: '' });
+    const [editingValues, setEditingValues] = useState({ title: '', content: '', text: '' });
 
     const fetchPosts = async () => {
         try {
@@ -26,8 +26,9 @@ export default function AdminPosts() {
     const startEdit = (post) => {
         setEditingId(post.id);
         setEditingValues({
-            title: post.text || '',
-            content: ''
+            text: post.text ?? post.title ?? '',
+            title: post.title ?? post.text ?? '',
+            content: post.content ?? post.text ?? ''
         });
     };
 
@@ -35,8 +36,14 @@ export default function AdminPosts() {
 
     const saveEdit = async (id) => {
         try {
-            await api.put(`/admin/posts/${id}`, { title: editingValues.title, content: editingValues.content });
-            setPosts((prev) => prev.map(p => p.id === id ? { ...p, title: editingValues.title, content: editingValues.content } : p));
+            const payload = {
+                text: editingValues.text,
+                title: editingValues.title || editingValues.text,
+                content: editingValues.content || editingValues.text
+            };
+
+            await api.put(`/admin/posts/${id}`, payload);
+            setPosts((prev) => prev.map(p => p.id === id ? { ...p, text: payload.text, title: payload.title, content: payload.content } : p));
             cancelEdit();
         } catch (err) {
             console.error('Failed to save post', err);
