@@ -419,7 +419,7 @@ const UserProfile = () => {
               <CalendarDays size={18} /> Activity Calendar
             </div>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginRight: '8px', fontSize: '0.75rem', color: '#94A3B8' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginRight: '8px', fontSize: '0.825rem', color: '#94A3B8' }}>
                 <div style={{ height: '12px' }} />
                 <div>Sun</div>
                 <div>Mon</div>
