@@ -119,7 +119,7 @@ export default function AdminUsers() {
                 {filteredUsers.length > 0 ? (
                   filteredUsers.map((user) => (
                     <tr key={user.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }}>
-                      <td style={{ padding: '16px' }}>
+                      <td data-label="User" style={{ padding: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div style={{
                             width: '40px', height: '40px', borderRadius: '50%',
@@ -135,8 +135,8 @@ export default function AdminUsers() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '16px', color: 'rgba(255,255,255,0.8)' }}>{user.email}</td>
-                      <td style={{ padding: '16px', color: 'rgba(255,255,255,0.8)' }}>
+                      <td data-label="Email" style={{ padding: '16px', color: 'rgba(255,255,255,0.8)' }}>{user.email}</td>
+                      <td data-label="League" style={{ padding: '16px', color: 'rgba(255,255,255,0.8)' }}>
                         {user.role === "Admin" ? (
                           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             <Shield size={16} color="#3B82F6" />
@@ -151,7 +151,7 @@ export default function AdminUsers() {
                           </div>
                         )}
                       </td>
-                      <td style={{ padding: '16px', color: 'rgba(255,255,255,0.8)' }}>
+                      <td data-label="Stats" style={{ padding: '16px', color: 'rgba(255,255,255,0.8)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#F59E0B' }} title="Total XP">
                             <Star size={14} /> {user.stats?.totalXp ?? user.stats?.total_xp ?? 0}
@@ -164,7 +164,7 @@ export default function AdminUsers() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '16px', textAlign: 'right' }}>
+                      <td data-label="Actions" style={{ padding: '16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                           {(currentUser?.id === user.id || isProtectedAdmin(user)) ? (
                             <button

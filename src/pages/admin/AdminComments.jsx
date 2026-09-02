@@ -92,9 +92,9 @@ export default function AdminComments() {
                 ) : (
                   comments.map((comment) => (
                     <tr key={comment.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <td style={{ padding: '12px', fontFamily: 'monospace' }}>{comment.id}</td>
+                      <td data-label="ID" style={{ padding: '12px', fontFamily: 'monospace' }}>{comment.id}</td>
 
-                      <td style={{ padding: '12px', minWidth: '300px' }}>
+                      <td data-label="Comment" style={{ padding: '12px', minWidth: '300px' }}>
                         {editingId === comment.id ? (
                           <textarea value={editingContent} onChange={(e) => setEditingContent(e.target.value)} rows={3} style={{ width: '100%', padding: '8px', borderRadius: '8px', resize: 'vertical' }} />
                         ) : (
@@ -102,17 +102,17 @@ export default function AdminComments() {
                         )}
                       </td>
 
-                      <td style={{ padding: '12px' }}>{comment.authorName || comment.author || comment.userName || comment.senderName || 'Unknown'}</td>
+                      <td data-label="Author" style={{ padding: '12px' }}>{comment.authorName || comment.author || comment.userName || comment.senderName || 'Unknown'}</td>
 
-                      <td style={{ padding: '12px' }}>{(() => { const email = comment.senderEmail || comment.senderEmailAddress || comment.authorEmail || comment.user?.email || null; return email ? <a href={`mailto:${email}`} style={{ color: 'inherit' }}>{email}</a> : '—'; })()}</td>
+                      <td data-label="Email" style={{ padding: '12px' }}>{(() => { const email = comment.senderEmail || comment.senderEmailAddress || comment.authorEmail || comment.user?.email || null; return email ? <a href={`mailto:${email}`} style={{ color: 'inherit' }}>{email}</a> : '—'; })()}</td>
 
-                      <td style={{ padding: '12px' }}>{(() => {
+                      <td data-label="Writing Date" style={{ padding: '12px' }}>{(() => {
                         const dateVal = comment.writingDate || comment.createdAt || comment.created_at || comment.date || comment.timestamp || comment.shareDate || null;
                         const d = dateVal ? new Date(dateVal) : null;
                         return d && !Number.isNaN(d.getTime()) ? d.toLocaleString() : '—';
                       })()}</td>
 
-                      <td style={{ padding: '12px' }}>{comment.postTitle || comment.post?.title || comment.postId || comment.post?.id || '—'}</td>
+                      <td data-label="Post" style={{ padding: '12px' }}>{comment.postTitle || comment.post?.title || comment.postId || comment.post?.id || '—'}</td>
 
                       <td style={{ padding: '12px', textAlign: 'right' }}>
                         {editingId === comment.id ? (

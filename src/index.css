@@ -219,6 +219,47 @@ a:hover {
 .delay-200 { animation-delay: 200ms; }
 .delay-300 { animation-delay: 300ms; }
 
+/* Responsive rules */
+@media (max-width: 1024px) {
+  .container { padding: 0 16px; max-width: 960px; }
+  .glass-panel { padding: 18px; border-radius: 14px; }
+  .btn { padding: 10px 18px; font-size: 0.95rem; }
+  .admin-sidebar { width: 220px !important; }
+}
+
+@media (max-width: 768px) {
+  /* Stack admin layout vertically on small screens */
+  .admin-shell { flex-direction: column; }
+  .admin-sidebar { width: 100% !important; border-right: none !important; display: flex; overflow-x: auto; padding: 12px 8px !important; }
+  .admin-nav { flex-direction: row !important; gap: 8px !important; }
+  .admin-nav a { padding: 10px 12px !important; white-space: nowrap; }
+
+  /* Reduce paddings globally */
+  .container { padding: 0 12px; }
+  .admin-content { padding: 20px !important; }
+  .admin-topbar { padding: 12px 16px !important; }
+
+  /* Make tables responsive: hide header and show rows as blocks */
+  .glass-panel table thead { display: none; }
+  .glass-panel table, .glass-panel table tbody, .glass-panel table tr, .glass-panel table td { display: block; width: 100%; }
+  .glass-panel table tr { margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .glass-panel table td { padding: 10px 8px; text-align: left; }
+  .glass-panel table td[style*='textAlign: right'] { text-align: right; }
+  .glass-panel table td:before { content: attr(data-label); display: block; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+
+  /* Buttons compact */
+  .btn { padding: 8px 12px; font-size: 0.95rem; }
+
+  /* Make calendar grid scrollable with larger squares fitting smaller screens */
+  .activity-calendar { overflow-x: auto; }
+}
+
+@media (max-width: 420px) {
+  .btn { padding: 6px 10px; font-size: 0.9rem; }
+  .glass-panel { padding: 12px; }
+  .container { padding: 0 8px; }
+}
+
 /* Premium Card (Hover lifting, inner glow) */
 .premium-card {
   background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);

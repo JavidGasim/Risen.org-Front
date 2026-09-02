@@ -163,7 +163,7 @@ export default function AdminPosts() {
                                             }}
                                         >
                                             {/* ID */}
-                                            <td
+                                            <td data-label="ID"
                                                 style={{
                                                     padding: '12px',
                                                     fontFamily: 'monospace'
@@ -173,7 +173,7 @@ export default function AdminPosts() {
                                             </td>
 
                                             {/* POST TEXT */}
-                                            <td style={{ padding: '12px', minWidth: '300px' }}>
+                                            <td data-label="Post" style={{ padding: '12px', minWidth: '300px' }}>
                                                 {editingId === post.id ? (
                                                     <textarea
                                                         value={editingValues.text}
@@ -206,13 +206,13 @@ export default function AdminPosts() {
                                             </td>
 
                                             {/* AUTHOR */}
-                                            <td style={{ padding: '12px' }}>
+                                            <td data-label="Author" style={{ padding: '12px' }}>
                                                 {post.senderName || 'Unknown'}
                                             </td>
 
 
                                             {/* EMAIL */}
-                                            <td style={{ padding: '12px' }}>
+                                            <td data-label="Email" style={{ padding: '12px' }}>
                                                 {(() => {
                                                     const email = post.senderEmail || post.senderEmailAddress || post.authorEmail || post.sender?.email || null;
                                                     return email ? (
@@ -224,7 +224,7 @@ export default function AdminPosts() {
                                             </td>
 
                                             {/* CREATED */}
-                                            <td style={{ padding: '12px' }}>
+                                            <td data-label="Created" style={{ padding: '12px' }}>
                                                 {post.shareDate
                                                     ? new Date(
                                                         post.shareDate
@@ -233,17 +233,17 @@ export default function AdminPosts() {
                                             </td>
 
                                             {/* LIKES */}
-                                            <td style={{ padding: '12px' }}>
+                                            <td data-label="Likes" style={{ padding: '12px' }}>
                                                 {post.likeCount ?? 0}
                                             </td>
 
                                             {/* COMMENTS */}
-                                            <td style={{ padding: '12px' }}>
+                                            <td data-label="Comments" style={{ padding: '12px' }}>
                                                 {post.commentCount ?? 0}
                                             </td>
 
                                             {/* ACTIONS */}
-                                            <td
+                                            <td data-label="Actions"
                                                 style={{
                                                     padding: '12px',
                                                     textAlign: 'right'
